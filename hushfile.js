@@ -1,6 +1,6 @@
 // load and apply config
 var xhr = new XMLHttpRequest();
-xhr.open('GET', '/hushfile-config.json', true);
+xhr.open('GET', '/hushfile-webclient-config.json', true);
 xhr.onload = function(e) {
 	if (this.status == 200) {
 		var config = JSON.parse(xhr.responseText);

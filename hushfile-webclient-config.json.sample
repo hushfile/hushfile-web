@@ -4,5 +4,12 @@
         "footer": "default",
         "operatoremail": "operator@example.com"
     },
-    "menuitems": []
+    "menuitems": [
+        {
+            "FAQ": "faq.html"
+        },
+        {
+            "About": "about.html"
+        }
+    ]
 }
