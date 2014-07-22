@@ -89,7 +89,7 @@ function hfUpdateProgressComputable(target) {
 }
 
 
-//DRY
+//function to mark a step as completed (with checkbox and green colour)
 function hfCheckStep(checkbox, label) {
 	$(checkbox).removeClass('icon-spinner icon-spin icon-check-empty').addClass('icon-check');
 	$(label).css('color', 'green');
