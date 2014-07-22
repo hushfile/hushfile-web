@@ -67,30 +67,41 @@ function hfEncrypt() {
 	document.getElementById('uploading').style.display="block";
 	document.getElementById('uploaddone').className="icon-spinner icon-spin";
 
-	setTimeout('hfUpload(cryptoobject,metadataobject,deletepassword)',1000);
+	setTimeout('hfUpload(cryptoobject,metadataobject,deletepassword, 1024)',1000);
 }
 
-// function that uploads the data to the server
-function hfUpload(cryptoobject,metadataobject,deletepassword) {
+var uploadCompletion = function(responseobject){
+	document.getElementById('uploaddone').className= "icon-check";
+	document.getElementById('uploading').style.color='green';
+	document.getElementById('response').style.display="block";
+	//get current URL
+	basepath = window.location.protocol + '//' + window.location.host + '/';
+	url = basepath+responseobject.fileid+'#'+document.getElementById('password').value;
+
+	document.getElementById('response').innerHTML = '<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="/'+url+'">Go to url</a>';
+	document.getElementById('url-textfield').select()
+}
+
+
+//function to upload the remaining chunks
+function hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, start, completion) {
+	var end = start + chunksize;
+	var chunkdata = cryptoobject.toString().substring(start, end);
+	var chunknumber = start/chunksize; //this should give an integer ;)
+	var totalchunks = Math.ceil(cryptoobject.toString().length/chunksize);
+	var last = cryptoobject.toString().length < end;
 	var xhr = new XMLHttpRequest();
 	xhr.open('POST', '/api/upload', true);
 	xhr.onload = function(e) {
-		//make sure progress is at 100%
-		document.getElementById("uploadprogressbar").style.width = '100%';
-		document.getElementById("uploadprogressbar").textContent = '100%';
 		//parse json reply
 		try {
 			var responseobject = JSON.parse(xhr.responseText);
 			if (responseobject.status=='ok') {
-				document.getElementById('uploaddone').className= "icon-check";
-				document.getElementById('uploading').style.color='green';
-				document.getElementById('response').style.display="block";
-				//get current URL
-				basepath = window.location.protocol + '//' + window.location.host + '/';
-				url = basepath+responseobject.fileid+'#'+document.getElementById('password').value;
-
-				document.getElementById('response').innerHTML = '<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="/'+url+'">Go to url</a>';
-				document.getElementById('url-textfield').select()
+				if(responseobject.finished) {
+					completion(responseobject);	
+				} else {
+					hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, end, completion);
+				}
 			} else {
 				document.getElementById('response').innerHTML = 'Something went wrong. Sorry about that. <a href="/">Try again.</a>';
 			}
@@ -99,20 +110,49 @@ function hfUpload(cryptoobject,metadataobject,deletepassword) {
 		};
 	};
 
-	// Listen to the upload progress
-	xhr.upload.onprogress = function(e) {
-		if (e.lengthComputable) {
-			temp = Math.round((e.loaded / e.total) * 100);
-			document.getElementById("uploadprogressbar").style.width = temp + '%';
-			document.getElementById("uploadprogressbar").textContent = temp + '%';
+	var formData = new FormData();
+	formData.append('fileid', fileid);
+	formData.append('cryptofile', chunkdata);
+	formData.append('uploadpassword', uploadpassword);
+	formData.append('chunknumber', chunknumber);
+	formData.append('finishupload', last);
+	xhr.send(formData);	
+}
+
+//function to upload the first chunk and metadata
+function hfUpload(cryptoobject, metadataobject, deletepassword, chunksize) {
+	chunksize = chunksize*1000; //transform to MB
+	var chunkdata = cryptoobject.toString().substring(0, chunksize);
+	var shortcircuit = cryptoobject.toString().length < chunksize;
+	var xhr = new XMLHttpRequest();
+	xhr.open('POST', '/api/upload', true);
+	xhr.onload = function(e) {
+		//parse json reply
+		try {
+			var responseobject = JSON.parse(xhr.responseText);
+			if (responseobject.status=='ok') {
+				if(responseobject.finished){
+					uploadCompletion(responseobject);
+				} else {
+					hfUploadChunk(responseobject.fileid, cryptoobject, responseobject.uploadpassword, chunksize, chunksize, function(r) {uploadCompletion(r)});
+				}
+			} else {
+				document.getElementById('response').innerHTML = 'Something went wrong. Sorry about that. <a href="/">Try again.</a>';
+			}
+		} catch(err) {
+			document.getElementById('response').innerHTML = 'Something went wrong: ' + err;
 		};
 	};
+	
 	var formData = new FormData();
-	formData.append('cryptofile', cryptoobject);
+	formData.append('cryptofile', chunkdata);
 	formData.append('metadata', metadataobject);
 	formData.append('deletepassword', deletepassword);
-	xhr.send(formData);
-};
+	formData.append('chunknumber', 0);
+	formData.append('finishupload', shortcircuit);
+	xhr.send(formData);	
+}
+
 
 // return a random password of the given length
 function hfRandomPassword(length){
