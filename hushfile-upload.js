@@ -101,7 +101,7 @@ function hfUploadCompletion(responseobject) {
 	basepath = window.location.protocol + '//' + window.location.host + '/';
 	url = basepath+responseobject.fileid+'#'+document.getElementById('password').value;
 
-	document.getElementById('response').innerHTML = '<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="/'+url+'">Go to url</a>';
+	document.getElementById('response').innerHTML = '<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="'+url+'">Go to url</a>';
 	document.getElementById('url-textfield').select()
 }
 
