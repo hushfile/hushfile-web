@@ -1,27 +1,25 @@
 // function that handles reading file after it has been selected
 function hfHandleFileSelect(evt) {
 	// show upload page elements
-	document.getElementById('uploadbuttondiv').style.display="none";
-	document.getElementById('read_progress_div').style.display="block";
-	document.getElementById('encrypting').style.display="block";
-	document.getElementById('uploading').style.display="block";
-
+	$('#uploadbuttondiv').hide();
+	$('#read_progress_div, #encrypting, #uploading').css('display', 'block');
+	
 	//create filereader object
 	reader = new FileReader();
 	
 	//register event handlers
-	reader.onprogress = hfUpdateProgressComputable('filereadpercentbar');
+	reader.onprogress = hfUpdateProgressComputable('#filereadpercentbar');
 
 	// runs after file reading completes
 	reader.onload = function(e) {
 		// Ensure that the load_progress bar displays 100% at the end.
-		hfUpdateProgressAbsolute('filereadpercentbar', 1, 1);
-		document.getElementById('readingdone').className= 'icon-check';
-		document.getElementById('read_progress_div').style.color='green';
-		
+		hfUpdateProgressAbsolute('#filereadpercentbar', 1, 1);
+		$('#readingdone').removeClass('icon-check-empty').addClass('icon-check');
+		$('#read_progress_div').css('color', 'green');
+
 		//make the next section visible
-		document.getElementById('encrypting').style.display="block";
-		document.getElementById('encryptingdone').className="icon-spinner icon-spin";
+		$('#encrypting').css('display', 'block');
+		$('#encryptingdone').addClass('icon-spinner icon-spin');
 		setTimeout('hfEncrypt()',1000);
 	};
 
@@ -33,10 +31,10 @@ function hfHandleFileSelect(evt) {
 		mimetype = evt.target.files[0].type;
 	}
 	filesize = evt.target.files[0].size;
-	document.getElementById('filename').innerHTML = filename;
-	document.getElementById('mimetype').innerHTML = mimetype;
-	document.getElementById('filesize').innerHTML = filesize;
-	document.getElementById('file_info_div').style.display="block";
+	$('#filename').html(filename);
+	$('#mimetype').html(mimetype);
+	$('#filesize').html(filesize);
+	$('#file_info_div').css('display', 'block');
 	
 	// begin reading the file
 	reader.readAsArrayBuffer(evt.target.files[0]);
@@ -56,53 +54,63 @@ function hfEncrypt() {
 	
 	//encrypt the metadata
 	metadatajson = '{"filename": "'+filename+'", "mimetype": "'+mimetype+'", "filesize": "'+filesize+'", "deletepassword": "' + deletepassword + '"}'
-	metadataobject = CryptoJS.AES.encrypt(metadatajson, document.getElementById('password').value);
+	metadataobject = CryptoJS.AES.encrypt(metadatajson, $('#password').val());
 
 	//done encrypting
-	document.getElementById('encryptingdone').className="icon-check";
-	document.getElementById('encrypting').style.color='green';
+	hfCheckStep('#encryptingdone', '#encrypting');
 
 	//make the next section visible
-	document.getElementById('uploading').style.display="block";
-	document.getElementById('uploaddone').className="icon-spinner icon-spin";
+	$('#uploaddone').addClass('icon-spinner icon-spin');
+	$('#uploading').css('display','block'); //this needs to be here for the progressbar to show status
 
 	setTimeout('hfUpload(cryptoobject,metadataobject,deletepassword, 1024)',1000);
 }
 
+
+//function to update progressbar with self defined values
 function hfUpdateProgressAbsolute(target, current, total) {
 	var temp = Math.round(current / total * 100);
-	document.getElementById(target).style.width = temp + '%';
-	document.getElementById(target).textContent = temp + '%';
+	$(target).width(temp + '%');
+	$(target).text(temp + '%');
 }
 
+
+//function to update progressbar with file
 function hfUpdateProgressComputable(target) {
 	return function(evt){
 		// evt is an ProgressEvent.
 		if (evt.lengthComputable) {
 			var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
 			// Increase the load_progress bar length.
-			document.getElementById(target).style.width = percentLoaded + '%';
-			document.getElementById(target).textContent = percentLoaded + '%';
+			$(target).width(percentLoaded + '%');
+			$(target).text(percentLoaded + '%');
 		}
 	}
 }
 
+
+//DRY
+function hfCheckStep(checkbox, label) {
+	$(checkbox).removeClass('icon-spinner icon-spin icon-check-empty').addClass('icon-check');
+	$(label).css('color', 'green');
+}
+
+
+//function invoked after upload, displaying the url
 function hfUploadCompletion(responseobject) {
 	// Ensure that the load_progress bar displays 100% at the end.
-	hfUpdateProgressAbsolute('uploadprogressbar', 1, 1);
-	document.getElementById('readingdone').className= 'icon-check';
-	document.getElementById('read_progress_div').style.color='green';
+	hfUpdateProgressAbsolute('#uploadprogressbar', 1, 1);
+	$('#read_progress_div').css('color','green');
 	
 	//make the next section visible
-	document.getElementById('uploaddone').className= "icon-check";
-	document.getElementById('uploading').style.color='green';
-	document.getElementById('response').style.display="block";
+	hfCheckStep('#uploaddone', '#uploading');
+
 	//get current URL
 	basepath = window.location.protocol + '//' + window.location.host + '/';
-	url = basepath+responseobject.fileid+'#'+document.getElementById('password').value;
+	url = basepath+responseobject.fileid+'#'+$('#password').val();
 
-	document.getElementById('response').innerHTML = '<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="'+url+'">Go to url</a>';
-	document.getElementById('url-textfield').select()
+	$('#response').html('<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="'+url+'">Go to url</a>');
+	$('#url-textfield').select()
 }
 
 
@@ -123,14 +131,14 @@ function hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, start, c
 				if(responseobject.finished) {
 					completion(responseobject);	
 				} else {
-					hfUpdateProgressAbsolute('uploadprogressbar', chunknumber, totalchunks);
+					hfUpdateProgressAbsolute('#uploadprogressbar', chunknumber+1, totalchunks);
 					hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, end, completion);
 				}
 			} else {
-				document.getElementById('response').innerHTML = 'Something went wrong. Sorry about that. <a href="/">Try again.</a>';
+				$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
 			}
 		} catch(err) {
-			document.getElementById('response').innerHTML = 'Something went wrong: ' + err;
+			$('#response').html('Something went wrong: ' + err);
 		};
 	};
 
@@ -142,6 +150,7 @@ function hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, start, c
 	formData.append('finishupload', last);
 	xhr.send(formData);	
 }
+
 
 //function to upload the first chunk and metadata
 function hfUpload(cryptoobject, metadataobject, deletepassword, chunksize) {
@@ -158,18 +167,18 @@ function hfUpload(cryptoobject, metadataobject, deletepassword, chunksize) {
 				if(responseobject.finished){
 					hfUploadCompletion(responseobject);
 				} else {
-					hfUpdateProgressAbsolute('uploadprogressbar', 1, Math.max(1, Math.ceil(cryptoobject.toString().length/chunksize)));
+					hfUpdateProgressAbsolute('#uploadprogressbar', 1, Math.max(1, Math.ceil(cryptoobject.toString().length/chunksize)));
 					hfUploadChunk(responseobject.fileid, cryptoobject, responseobject.uploadpassword, chunksize, chunksize, hfUploadCompletion);
 				}
 			} else {
-				document.getElementById('response').innerHTML = 'Something went wrong. Sorry about that. <a href="/">Try again.</a>';
+				$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
 			}
 		} catch(err) {
-			document.getElementById('response').innerHTML = 'Something went wrong: ' + err;
+			$('#response').html('Something went wrong: ' + err);
 		};
 	};
 	
-	if(shortcircuit) xhr.onprogress = hfUpdateProgressComputable('uploadprogressbar');
+	if(shortcircuit) xhr.onprogress = hfUpdateProgressComputable('#uploadprogressbar');
 
 	var formData = new FormData();
 	formData.append('cryptofile', chunkdata);
