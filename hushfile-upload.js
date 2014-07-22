@@ -115,7 +115,7 @@ function hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, start, c
 	var last = cryptoobject.toString().length < end;
 	var xhr = new XMLHttpRequest();
 	xhr.open('POST', '/api/upload', true);
-	xhr.onload = function(e) { console.log("")
+	xhr.onload = function(e) {
 		//parse json reply
 		try {
 			var responseobject = JSON.parse(xhr.responseText);
