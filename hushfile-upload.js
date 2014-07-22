@@ -10,13 +10,12 @@ function hfHandleFileSelect(evt) {
 	reader = new FileReader();
 	
 	//register event handlers
-	reader.onprogress = hfUpdateProgress;
+	reader.onprogress = hfUpdateProgressComputable('filereadpercentbar');
 
 	// runs after file reading completes
 	reader.onload = function(e) {
 		// Ensure that the load_progress bar displays 100% at the end.
-		document.getElementById("filereadpercentbar").style.width = '100%';
-		document.getElementById("filereadpercentbar").textContent = '100%';
+		hfUpdateProgressAbsolute('filereadpercentbar', 1, 1);
 		document.getElementById('readingdone').className= 'icon-check';
 		document.getElementById('read_progress_div').style.color='green';
 		
@@ -70,7 +69,31 @@ function hfEncrypt() {
 	setTimeout('hfUpload(cryptoobject,metadataobject,deletepassword, 1024)',1000);
 }
 
+function hfUpdateProgressAbsolute(target, current, total) {
+	var temp = Math.round(current / total * 100);
+	document.getElementById(target).style.width = temp + '%';
+	document.getElementById(target).textContent = temp + '%';
+}
+
+function hfUpdateProgressComputable(target) {
+	return function(evt){
+		// evt is an ProgressEvent.
+		if (evt.lengthComputable) {
+			var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
+			// Increase the load_progress bar length.
+			document.getElementById(target).style.width = percentLoaded + '%';
+			document.getElementById(target).textContent = percentLoaded + '%';
+		}
+	}
+}
+
 function hfUploadCompletion(responseobject) {
+	// Ensure that the load_progress bar displays 100% at the end.
+	hfUpdateProgressAbsolute('uploadprogressbar', 1, 1);
+	document.getElementById('readingdone').className= 'icon-check';
+	document.getElementById('read_progress_div').style.color='green';
+	
+	//make the next section visible
 	document.getElementById('uploaddone').className= "icon-check";
 	document.getElementById('uploading').style.color='green';
 	document.getElementById('response').style.display="block";
@@ -92,7 +115,7 @@ function hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, start, c
 	var last = cryptoobject.toString().length < end;
 	var xhr = new XMLHttpRequest();
 	xhr.open('POST', '/api/upload', true);
-	xhr.onload = function(e) {
+	xhr.onload = function(e) { console.log("")
 		//parse json reply
 		try {
 			var responseobject = JSON.parse(xhr.responseText);
@@ -100,6 +123,7 @@ function hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, start, c
 				if(responseobject.finished) {
 					completion(responseobject);	
 				} else {
+					hfUpdateProgressAbsolute('uploadprogressbar', chunknumber, totalchunks);
 					hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, end, completion);
 				}
 			} else {
@@ -134,6 +158,7 @@ function hfUpload(cryptoobject, metadataobject, deletepassword, chunksize) {
 				if(responseobject.finished){
 					hfUploadCompletion(responseobject);
 				} else {
+					hfUpdateProgressAbsolute('uploadprogressbar', 1, Math.max(1, Math.ceil(cryptoobject.toString().length/chunksize)));
 					hfUploadChunk(responseobject.fileid, cryptoobject, responseobject.uploadpassword, chunksize, chunksize, hfUploadCompletion);
 				}
 			} else {
@@ -144,6 +169,8 @@ function hfUpload(cryptoobject, metadataobject, deletepassword, chunksize) {
 		};
 	};
 	
+	if(shortcircuit) xhr.onprogress = hfUpdateProgressComputable('uploadprogressbar');
+
 	var formData = new FormData();
 	formData.append('cryptofile', chunkdata);
 	formData.append('metadata', metadataobject);
@@ -164,14 +191,3 @@ function hfRandomPassword(length){
 	pass += chars.charAt(Math.floor(randomBuf[i]/4));
 	return pass;
 }
-
-// progress function for filereader on upload page
-function hfUpdateProgress(evt) {
-	// evt is an ProgressEvent.
-	if (evt.lengthComputable) {
-		var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
-		// Increase the load_progress bar length.
-		document.getElementById("filereadpercentbar").style.width = percentLoaded + '%';
-		document.getElementById("filereadpercentbar").textContent = percentLoaded + '%';
-	};
-};
