@@ -61,7 +61,6 @@ function hfEncrypt() {
 
 	//make the next section visible
 	$('#uploaddone').addClass('icon-spinner icon-spin');
-	$('#uploading').css('display','block'); //this needs to be here for the progressbar to show status
 
 	setTimeout('hfUpload(cryptoobject,metadataobject,deletepassword, 1024)',1000);
 }
@@ -121,26 +120,6 @@ function hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, start, c
 	var chunknumber = start/chunksize; //this should give an integer ;)
 	var totalchunks = Math.ceil(cryptoobject.toString().length/chunksize);
 	var last = cryptoobject.toString().length < end;
-	var xhr = new XMLHttpRequest();
-	xhr.open('POST', '/api/upload', true);
-	xhr.onload = function(e) {
-		//parse json reply
-		try {
-			var responseobject = JSON.parse(xhr.responseText);
-			if (responseobject.status=='ok') {
-				if(responseobject.finished) {
-					completion(responseobject);	
-				} else {
-					hfUpdateProgressAbsolute('#uploadprogressbar', chunknumber+1, totalchunks);
-					hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, end, completion);
-				}
-			} else {
-				$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
-			}
-		} catch(err) {
-			$('#response').html('Something went wrong: ' + err);
-		};
-	};
 
 	var formData = new FormData();
 	formData.append('fileid', fileid);
@@ -148,7 +127,35 @@ function hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, start, c
 	formData.append('uploadpassword', uploadpassword);
 	formData.append('chunknumber', chunknumber);
 	formData.append('finishupload', last);
-	xhr.send(formData);	
+
+	$.ajax({
+		url: '/api/upload',
+		type: 'POST',
+		data: formData,
+		dataType: 'json',
+		contentType: false,
+		processData: false,
+		success: function(responseText) {
+			try{
+				responseobject = JSON.parse(responseText);
+				if (responseobject.status=='ok') {
+					if(responseobject.finished) {
+						completion(responseobject);	
+					} else {
+						hfUpdateProgressAbsolute('#uploadprogressbar', chunknumber+1, totalchunks);
+						hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, end, completion);
+					}
+				} else {
+					$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
+				}
+			} catch(err) {
+				$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
+			}
+		},
+		error: function(err) {
+			$('#response').html('Something went wrong: ' + err);
+		}
+	});
 }
 
 
@@ -157,26 +164,6 @@ function hfUpload(cryptoobject, metadataobject, deletepassword, chunksize) {
 	chunksize = chunksize*1000; //transform to MB
 	var chunkdata = cryptoobject.toString().substring(0, chunksize);
 	var shortcircuit = cryptoobject.toString().length < chunksize;
-	var xhr = new XMLHttpRequest();
-	xhr.open('POST', '/api/upload', true);
-	xhr.onload = function(e) {
-		//parse json reply
-		try {
-			var responseobject = JSON.parse(xhr.responseText);
-			if (responseobject.status=='ok') {
-				if(responseobject.finished){
-					hfUploadCompletion(responseobject);
-				} else {
-					hfUpdateProgressAbsolute('#uploadprogressbar', 1, Math.max(1, Math.ceil(cryptoobject.toString().length/chunksize)));
-					hfUploadChunk(responseobject.fileid, cryptoobject, responseobject.uploadpassword, chunksize, chunksize, hfUploadCompletion);
-				}
-			} else {
-				$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
-			}
-		} catch(err) {
-			$('#response').html('Something went wrong: ' + err);
-		};
-	};
 	
 	if(shortcircuit) xhr.onprogress = hfUpdateProgressComputable('#uploadprogressbar');
 
@@ -186,7 +173,35 @@ function hfUpload(cryptoobject, metadataobject, deletepassword, chunksize) {
 	formData.append('deletepassword', deletepassword);
 	formData.append('chunknumber', 0);
 	formData.append('finishupload', shortcircuit);
-	xhr.send(formData);	
+
+	$.ajax({
+		url: '/api/upload',
+		type: 'POST',
+		data: formData,
+		dataType: 'json',
+		contentType: false,
+		processData: false,
+		success: function(responseText) {
+			try {
+				responseobject = JSON.parse(responseText);
+				if (responseobject.status=='ok') {
+					if(responseobject.finished){
+						hfUploadCompletion(responseobject);
+					} else {
+						hfUpdateProgressAbsolute('#uploadprogressbar', 1, Math.max(1, Math.ceil(cryptoobject.toString().length/chunksize)));
+						hfUploadChunk(responseobject.fileid, cryptoobject, responseobject.uploadpassword, chunksize, chunksize, hfUploadCompletion);
+					}
+				} else {
+					$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
+				}
+			} catch(err) {
+				$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
+			}
+		},
+		error: function(err) {
+			$('#response').html('Something went wrong: ' + err);
+		}
+	});
 }
 
 
