@@ -70,7 +70,7 @@ function hfEncrypt() {
 	setTimeout('hfUpload(cryptoobject,metadataobject,deletepassword, 1024)',1000);
 }
 
-var uploadCompletion = function(responseobject){
+function hfUploadCompletion(responseobject) {
 	document.getElementById('uploaddone').className= "icon-check";
 	document.getElementById('uploading').style.color='green';
 	document.getElementById('response').style.display="block";
@@ -132,9 +132,9 @@ function hfUpload(cryptoobject, metadataobject, deletepassword, chunksize) {
 			var responseobject = JSON.parse(xhr.responseText);
 			if (responseobject.status=='ok') {
 				if(responseobject.finished){
-					uploadCompletion(responseobject);
+					hfUploadCompletion(responseobject);
 				} else {
-					hfUploadChunk(responseobject.fileid, cryptoobject, responseobject.uploadpassword, chunksize, chunksize, function(r) {uploadCompletion(r)});
+					hfUploadChunk(responseobject.fileid, cryptoobject, responseobject.uploadpassword, chunksize, chunksize, hfUploadCompletion);
 				}
 			} else {
 				document.getElementById('response').innerHTML = 'Something went wrong. Sorry about that. <a href="/">Try again.</a>';
