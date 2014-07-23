@@ -108,7 +108,9 @@ function hfUploadCompletion(responseobject) {
 	basepath = window.location.protocol + '//' + window.location.host + '/';
 	url = basepath+responseobject.fileid+'#'+$('#password').val();
 
-	$('#response').html('<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="'+url+'">Go to url</a>');
+	$('#response')
+		.show()
+		.html('<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="'+url+'">Go to url</a>');
 	$('#url-textfield').select()
 }
 
