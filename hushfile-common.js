@@ -8,11 +8,12 @@ function hfhandlerequest() {
 		var fileid = window.location.pathname.substr(1);
 		
 		// check if fileid exists
-		var xhr = new XMLHttpRequest();
-		xhr.open('GET', '/api/exists?fileid='+fileid, true);
-		xhr.onload = function(e) {
-			if (this.status == 200) {
-				var responseobject = JSON.parse(xhr.responseText);
+		$.ajax({
+			url: '/api/exists?fileid='+fileid,
+			type: 'GET',
+			dataType: 'json',
+			success: function(responseText) {
+				var responseobject = JSON.parse(responseText);
 				if (responseobject.exists) {
 					// fileid exists
 					if(window.location.hash.substr(1)=="") {
@@ -22,21 +23,20 @@ function hfhandlerequest() {
 						hfSetContent(content,'download');
 					} else {
 						// show download page
-						hfShowPage('download.html','download');
-					};
+						hfShowPage('download.html','download', function(key) {
+							$('#downloadbtn').click(function(){
+								hfDownload(fileid, responseobject.chunks);
+							});
+						});
+					}
+
 				} else {
 					// fileid does not exist
 					hfSetContent('<div class="alert alert-error">Invalid fileid. Expired ?</div>\n','download');
 					return;
-				};
-			} else if (this.status == 404) {
-				//fileid does not exist
-				hfSetContent('<div class="alert alert-error">Invalid fileid. Expired ?</div>\n','download');
-			};
-		};
-		
-		// send /exists request
-		xhr.send();
+				}
+			}
+		});
 	};
 };
 
@@ -58,7 +58,7 @@ function hfSetContent(content,menuitem) {
 };
 
 // function to show pages from custom menu items
-function hfShowPage(url,key) {
+function hfShowPage(url,key, completion) {
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', '/'+url, true);
 	xhr.onload = function(e) {
@@ -81,6 +81,8 @@ function hfShowPage(url,key) {
 				var fileid = window.location.pathname.substr(1);
 				hfGetMetadata(fileid);
 			}
+
+			return completion(key)
 		} else {
 			alert("Unable to get content, check client config!");
 		};
