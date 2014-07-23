@@ -55,6 +55,7 @@ function hfGetMetadata(fileid) {
 	ipxhr.send();
 }
 
+
 //function that downloads the file to the browser, and decrypts and shows download button
 function hfDownload(fileid) {
 	// get password from window.location
@@ -127,6 +128,7 @@ function hfDownload(fileid) {
 	xhr.send();
 };
 
+
 // function to redirect the browser after a new password has been entered
 function hfPwRedirect(fileid) {
 	password = document.getElementById('password').value;
@@ -134,6 +136,7 @@ function hfPwRedirect(fileid) {
 	// show download page
 	hfShowPage('download.html','download');
 };
+
 
 //function that deletes the file
 function hfDeleteFile(fileid) {
@@ -165,6 +168,7 @@ function hfDeleteFile(fileid) {
 	
 	xhr.send();
 }
+
 
 function hfDeleteConfirm(result) {
 	if (result === true) {
