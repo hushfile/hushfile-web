@@ -22,11 +22,11 @@ function hfGetMetadata(fileid) {
 			if(metadata != 'undefined') {
 				try {
 					var jsonmetadata = JSON.parse(metadata);
-					document.getElementById('metadata').style.display="block";
-					document.getElementById('filename').innerHTML = jsonmetadata.filename;
-					document.getElementById('mimetype').innerHTML = jsonmetadata.mimetype;
-					document.getElementById('filesize').innerHTML = jsonmetadata.filesize;
-					document.getElementById('deletepassword').innerHTML = jsonmetadata.deletepassword;
+					$('#metadata').show();
+					$('#filename').html(jsonmetadata.filename);
+					$('#mimetype').html(jsonmetadata.mimetype);
+					$('#filesize').html(jsonmetadata.filesize);
+					$('#deletepassword').html(jsonmetadata.deletepassword);
 				} catch(err) {
 					hfSetContent('<div class="alert alert-error">Unable to parse metadata, sorry.</div>\n','download');
 					return;
@@ -102,33 +102,33 @@ function hfDownload(fileid, totalchunks) {
 
 	hfDownloadChunk(fileid, 0, totalchunks, password, function() {
 			//done downloading, make downloading div green and change icon
-			document.getElementById('downloading').style.color='green';
-			document.getElementById('downloadingdone').className="icon-check";
+			$('#downloading').css('color', 'green');
+			$('#downloadingdone').removeClass('icon-spinner icon-spin').addClass("icon-check"); //explicitly clear classes?
 
 			//make the decrypting div visible
-			document.getElementById('decrypting').style.display="block";
+			$('#decrypting').show().css('color', 'green');
 
 			//done decrypting, change icon and make div green
-			document.getElementById('decryptingdone').className="icon-check";
-			document.getElementById('decrypting').style.color='green';
+			$('#decryptingdone').removeClass('icon-spinner icon-spin').addClass("icon-check");
+			
 
 			// download button
 			a = document.createElement("a");
 			a.href = window.URL.createObjectURL(fileblob);
-			a.download = document.getElementById('filename').innerHTML;
+			a.download = $('#filename').html();
 			linkText = document.createTextNode(" Download");
 			i = document.createElement("i");
 			i.className="icon-save icon-large";
 			a.appendChild(i);
 			a.appendChild(linkText);
 			a.className = "btn btn-large btn-primary btn-success";
-			document.getElementById('downloaddiv').appendChild(a);
+			$('#downloaddiv').append(a);
 			
 			//make div visible
-			document.getElementById('downloaddiv').style.display="block";
+			$('#downloaddiv').show();
 			
 			// if this is an image, make a preview
-			if((/image/i).test(document.getElementById('mimetype').innerHTML)){
+			if((/image/i).test($('#mimetype').html())){
 				img = document.createElement("img");
 				img.className="img-rounded";
 				img.src = window.URL.createObjectURL(fileblob);
@@ -136,8 +136,8 @@ function hfDownload(fileid, totalchunks) {
 				a.href = window.URL.createObjectURL(fileblob);
 				a.download = document.getElementById('filename').innerHTML;
 				a.appendChild(img);
-				document.getElementById('filepreview').appendChild(a);
-				document.getElementById('previewdiv').style.display="block";
+				$('#filepreview').append(a);
+				$('#previewdiv').show();
 			};
 	});
 };
@@ -145,7 +145,7 @@ function hfDownload(fileid, totalchunks) {
 
 // function to redirect the browser after a new password has been entered
 function hfPwRedirect(fileid) {
-	password = document.getElementById('password').value;
+	password = $('#password').value;
 	window.location = "/"+fileid+"#"+password;
 	// show download page
 	hfShowPage('download.html','download');
@@ -155,28 +155,28 @@ function hfPwRedirect(fileid) {
 //function that deletes the file
 function hfDeleteFile(fileid) {
 	// disable the delete button
-	document.getElementById('delete').className="btn btn-large btn-primary btn-success disabled";
-	document.getElementById('deleting').style.display="block";
+	$('#delete').addClass("btn btn-large btn-primary btn-success disabled");
+	$('#deleting').show();
 	var xhr = new XMLHttpRequest();
-	xhr.open('GET', '/api/delete?fileid='+fileid+'&deletepassword='+document.getElementById('deletepassword').innerHTML, true);
+	xhr.open('GET', '/api/delete?fileid='+fileid+'&deletepassword='+$('#deletepassword').html(), true);
 
 	xhr.onload = function(e) {
-		document.getElementById('deleteresponse').style.display="block";
+		$('#deleteresponse').show();
 		if (this.status == 200) {
 			//parse response json
 			var responseobject = JSON.parse(xhr.responseText);
 			if(responseobject.deleted) {
 				//file deleted OK
-				document.getElementById('deletingdone').className="icon-check";
-				document.getElementById('deleteresponse').innerHTML="<div class='alert alert-success'>File deleted successfully</div>\n";
+				$('#deletingdone').addClass("icon-check");
+				$('#deleteresponse').html("<div class='alert alert-success'>File deleted successfully</div>\n");
 			} else {
 				//unable to delete file
-				document.getElementById('deletingdone').className="icon-warning-sign";
-				document.getElementById('deleteresponse').innerHTML="<div class='alert alert-error'>Unable to delete file</div>\n";
+				$('#deletingdone').addClass("icon-warning-sign");
+				$('#deleteresponse').html("<div class='alert alert-error'>Unable to delete file</div>\n");
 			};
 		} else if (this.status == 401) {
-			document.getElementById('deletingdone').className="icon-warning-sign";
-			document.getElementById('deleteresponse').innerHTML="<div class='alert alert-error'>Incorrect deletepassword</div>\n";
+			$('#deletingdone').addClass("icon-warning-sign");
+			$('#deleteresponse').html("<div class='alert alert-error'>Incorrect deletepassword</div>\n");
 		};
 	};
 	
