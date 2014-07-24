@@ -55,6 +55,7 @@ function hfGetMetadata(fileid) {
 	ipxhr.send();
 }
 
+
 function hfDownloadChunk(fileid, chunknumber, totalchunks, password, completion, oldblob) {
 	// disable the download button
 	// make download progress bar div visible
@@ -92,6 +93,7 @@ function hfDownloadChunk(fileid, chunknumber, totalchunks, password, completion,
 		}
 	});
 }
+
 
 //function that downloads the file to the browser, and decrypts and shows download button
 function hfDownload(fileid, totalchunks) {
