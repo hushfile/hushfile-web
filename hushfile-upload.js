@@ -5,13 +5,14 @@ function hfHandleFileSelect(evt) {
 	$('#read_progress_div, #encrypting, #uploading').css('display', 'block');
 
 	// get file info and show it to the user
-	filename = evt.target.files[0].name;
-	if(evt.target.files[0].type === 'undefined') {
+    file = evt.target.files[0];
+	filename = file.name;
+	if(file.type === 'undefined') {
 		mimetype = "application/octet-stream";
 	} else {
-		mimetype = evt.target.files[0].type;
+		mimetype = file.type;
 	}
-	filesize = evt.target.files[0].size;
+	filesize = file.size;
 	$('#filename').html(filename);
 	$('#mimetype').html(mimetype);
 	$('#filesize').html(filesize);
@@ -86,7 +87,7 @@ function hfDoUpload() {
         'chunknumber': 0, 
         'password': document.getElementById('password').value, 
         'chunksize': chunksize, 
-        'file': evt.target.files[0],
+        'file': file,
         'metadata': metadataobject
     });
 };
