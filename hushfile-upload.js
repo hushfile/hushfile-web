@@ -37,10 +37,6 @@ function hfDoUpload() {
 	//generate deletepassword
 	deletepassword = hfRandomPassword(40);
 	
-	//encrypt the metadata
-	metadatajson = '{"filename": "'+filename+'", "mimetype": "'+mimetype+'", "filesize": "'+filesize+'", "deletepassword": "' + deletepassword + '"}'
-	metadataobject = CryptoJS.AES.encrypt(metadatajson, $('#password').val());
-
     // max. number of workers
     maxworkers = 5;
     
@@ -88,7 +84,8 @@ function hfDoUpload() {
         'password': document.getElementById('password').value, 
         'chunksize': chunksize, 
         'file': file,
-        'metadata': metadataobject
+        'deletepassword': deletepassword,
+        'mimetype': mimetype,
     });
 };
 

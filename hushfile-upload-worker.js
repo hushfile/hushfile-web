@@ -5,8 +5,11 @@ function hfUploadWorker() {
         password = e.data.password;
         chunksize = e.data.chunksize;
         file = e.data.file;
+        deletepassword = e.data.deletepassword;
         if(chunknumber==0) {
-            metadata = e.data.metadata;
+            //encrypt the metadata
+            metadatajson = '{"filename": "' + file.name + '", "mimetype": "' + mimetype + '", "filesize": "' + file.size + '", "deletepassword": "' + deletepassword + '"}';
+            metadataobject = CryptoJS.AES.encrypt(metadatajson, password);
         } else {
             fileid = e.data.fileid;
         };
@@ -31,7 +34,7 @@ function hfUploadWorker() {
             formData.append('chunknumber', chunknumber);
             formData.append('finishupload', false);
             if(chunknumber==0) {
-                formData.append('metadata', metadata);
+                formData.append('metadata', metadataobject);
             } else {
                 formData.append('uploadpassword', uploadpassword);
             };
