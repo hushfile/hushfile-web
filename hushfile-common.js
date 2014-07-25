@@ -25,7 +25,7 @@ function hfhandlerequest() {
 						// show download page
 						hfShowPage('download.html','download', function(key) {
 							$('#downloadbtn').click(function(){
-								hfDownload(fileid, responseobject.chunks);
+								hfDownload(fileid, responseobject.chunks, responseobject.totalsize);
 							});
 						});
 					}

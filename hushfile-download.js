@@ -56,90 +56,97 @@ function hfGetMetadata(fileid) {
 }
 
 
-function hfDownloadChunk(fileid, chunknumber, totalchunks, password, completion, oldblob) {
+function hfDownloadChunk(fileid, password, totalsize, success, error, chunknumber) {
 	// disable the download button
 	// make download progress bar div visible
 	$('#downloadbtn').addClass("btn btn-large btn-primary btn-success disabled");
 	$('#downloading').show();
 
-	$.ajax({
-		url: '/api/file?fileid='+fileid+'&chunknumber='+chunknumber,
-		type: 'GET',
-		success: function(response) {
-			// decrypt the data
-			decryptedwords = CryptoJS.AES.decrypt(response, password);
-			ui8a = CryptoJS.enc.u8array.stringify(decryptedwords);
-			reader = new FileReader();
-			contents = [];
-			var type = {type: $('#mimetype').html()};
-
-			if(oldblob == undefined){
-				fileblob = new Blob([ui8a],type);
-			} else {
-				fileblob = new Blob([oldblob, ui8a], type);
+	if(chunknumber == undefined) chunknumber = 0;
+	
+	var type = {type: $('#mimetype').html()};
+	var readSize = 1024000;
+	var idx = chunknumber*readSize;
+	
+	worker = new Worker('download-worker.js');
+	worker.postMessage({size:totalsize, start: idx, chunknumber: chunknumber, password:password, fileid:fileid, type: type});
+	
+	worker.onmessage = function(event) {
+		if(idx + readSize < totalsize) {
+			var temp = Math.round(idx/totalsize * 100) + '%';
+			$('#download_progress_bar_percent').css('width', temp).text(temp);
+			hfDownloadChunk(fileid, password, totalsize, completion, chunknumber);
+		} else {		
+			reader = new Worker('download-filereader.js');
+			reader.onmessage = function(event) {
+				message = event.data;
+				$('#download_progress_bar_percent').css('width', '100%').text('100%');
+				if(success) success(message.file);
 			}
 			
-			if(++chunknumber < totalchunks) {
-				var temp = Math.round(chunknumber/totalchunks * 100) + '%';
-				$('#download_progress_bar_percent').css('width', temp).text(temp);
-				hfDownloadChunk(fileid, chunknumber, totalchunks, password, completion, fileblob);
-			} else {
-				$('#download_progress_bar_percent').css('width', '100%').text('100%');
-				return completion(fileblob);
-			}
-		},
-		error: function(){
-			alert("An error was encountered downloading filedata.");
-		}
-	});
+			reader.postMessage({totalsize: totalsize});
+		}		
+	}
 }
 
 
 //function that downloads the file to the browser, and decrypts and shows download button
-function hfDownload(fileid, totalchunks) {
+function hfDownload(fileid, totalchunks, totalsize) {
 	// get password from window.location
 	var password = window.location.hash.substr(1);
 
-	hfDownloadChunk(fileid, 0, totalchunks, password, function() {
-			//done downloading, make downloading div green and change icon
-			$('#downloading').css('color', 'green');
-			$('#downloadingdone').removeClass('icon-spinner icon-spin').addClass("icon-check"); //explicitly clear classes?
+	 var persistentStorage = navigator.persistentStorage || navigator.webkitPersistentStorage;
+	 persistentStorage.queryUsageAndQuota(
+		function (used, remaining) {
+			persistentStorage.requestQuota(totalsize, 
+				function(bytes) {
+					hfDownloadChunk(fileid, password, totalsize, function(fileblob) {
+						//done downloading, make downloading div green and change icon
+						$('#downloading').css('color', 'green');
+						$('#downloadingdone').removeClass('icon-spinner icon-spin').addClass("icon-check"); //explicitly clear classes?
 
-			//make the decrypting div visible
-			$('#decrypting').show().css('color', 'green');
+						//make the decrypting div visible
+						$('#decrypting').show().css('color', 'green');
 
-			//done decrypting, change icon and make div green
-			$('#decryptingdone').removeClass('icon-spinner icon-spin').addClass("icon-check");
-			
-
-			// download button
-			a = document.createElement("a");
-			a.href = window.URL.createObjectURL(fileblob);
-			a.download = $('#filename').html();
-			linkText = document.createTextNode(" Download");
-			i = document.createElement("i");
-			i.className="icon-save icon-large";
-			a.appendChild(i);
-			a.appendChild(linkText);
-			a.className = "btn btn-large btn-primary btn-success";
-			$('#downloaddiv').append(a);
-			
-			//make div visible
-			$('#downloaddiv').show();
-			
-			// if this is an image, make a preview
-			if((/image/i).test($('#mimetype').html())){
-				img = document.createElement("img");
-				img.className="img-rounded";
-				img.src = window.URL.createObjectURL(fileblob);
-				a = document.createElement("a");
-				a.href = window.URL.createObjectURL(fileblob);
-				a.download = document.getElementById('filename').innerHTML;
-				a.appendChild(img);
-				$('#filepreview').append(a);
-				$('#previewdiv').show();
-			};
-	});
+						//done decrypting, change icon and make div green
+						$('#decryptingdone').removeClass('icon-spinner icon-spin').addClass("icon-check");
+						
+						// download button
+						a = document.createElement("a");
+						a.href = window.URL.createObjectURL(fileblob);
+						a.download = $('#filename').html();
+						linkText = document.createTextNode(" Download");
+						i = document.createElement("i");
+						i.className="icon-save icon-large";
+						a.appendChild(i);
+						a.appendChild(linkText);
+						a.className = "btn btn-large btn-primary btn-success";
+						$('#downloaddiv').append(a);
+						
+						//make div visible
+						$('#downloaddiv').show();
+						
+						// if this is an image, make a preview
+						if((/image/i).test($('#mimetype').html())){
+							img = document.createElement("img");
+							img.className="img-rounded";
+							img.src = window.URL.createObjectURL(fileblob);
+							a = document.createElement("a");
+							a.href = window.URL.createObjectURL(fileblob);
+							a.download = document.getElementById('filename').innerHTML;
+							a.appendChild(img);
+							$('#filepreview').append(a);
+							$('#previewdiv').show();
+						};
+				});
+			}, function() {
+				alert("An error was encountered downloading filedata.");
+			})
+		},
+		function(e) {
+			alert("An error was encountered downloading filedata.");
+		}
+	);
 };
 
 
