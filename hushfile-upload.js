@@ -1,27 +1,9 @@
 // function that handles reading file after it has been selected
 function hfHandleFileSelect(evt) {
 	// show upload page elements
-	$('#uploadbuttondiv').hide();
+	$('#fileselectdiv').hide();
 	$('#read_progress_div, #encrypting, #uploading').css('display', 'block');
 	
-	//create filereader object
-	reader = new FileReader();
-	
-	//register event handlers
-	reader.onprogress = hfUpdateProgressComputable('#filereadpercentbar');
-
-	// runs after file reading completes
-	reader.onload = function(e) {
-		// Ensure that the load_progress bar displays 100% at the end.
-		hfUpdateProgressAbsolute('#filereadpercentbar', 1, 1);
-		$('#readingdone').removeClass('icon-check-empty').addClass('icon-check');
-		$('#read_progress_div').css('color', 'green');
-
-		//make the next section visible
-		$('#encrypting').css('display', 'block');
-		$('#encryptingdone').addClass('icon-spinner icon-spin');
-		setTimeout('hfEncrypt()',1000);
-	};
 
 	// get file info and show it to the user
 	filename = evt.target.files[0].name;
@@ -35,20 +17,23 @@ function hfHandleFileSelect(evt) {
 	$('#mimetype').html(mimetype);
 	$('#filesize').html(filesize);
 	$('#file_info_div').css('display', 'block');
-	
-	// begin reading the file
-	reader.readAsArrayBuffer(evt.target.files[0]);
+    
+    // get chunksize, divide the chunksize by 1.5 to allow for encryption overhead 
+    chunksize = Math.floor(hfGetChunkSize() / 1.5);
+    
+    // find the number of chunks needed
+    chunkcount = Math.ceil(filesize / chunksize);
+    
+    $('#chunkcount').html(chunkcount);
+    $('#chunksdone').html(0);
+    $('#uploadbuttondiv').show();
+
 };
 
-
-// function that encrypts the file,
-// and creates and encrypts metadata
-function hfEncrypt() {
-	//encrypt the data
-	ui8a = new Uint8Array(reader.result);
-	wordarray = CryptoJS.enc.u8array.parse(ui8a);
-	cryptoobject = CryptoJS.AES.encrypt(wordarray, document.getElementById('password').value);
-
+function hfDoUpload() {
+    // hide upload button
+    $('#uploadbuttondiv').hide();
+    
 	//generate deletepassword
 	deletepassword = hfRandomPassword(40);
 	
@@ -56,47 +41,101 @@ function hfEncrypt() {
 	metadatajson = '{"filename": "'+filename+'", "mimetype": "'+mimetype+'", "filesize": "'+filesize+'", "deletepassword": "' + deletepassword + '"}'
 	metadataobject = CryptoJS.AES.encrypt(metadatajson, $('#password').val());
 
-	//done encrypting
-	hfCheckStep('#encryptingdone', '#encrypting');
+    // max. number of workers
+    maxworkers = 5;
+    
+    // initialize vars
+    fileid = false;
+    chunkindex = 0;    
+    chunkstate = [];
+    for (chunkindex=0; chunkindex < chunkcount; chunkindex++) {
+        chunkstate[chunkindex] = 'pending';
+    };
+    
+    // spawn worker to process the first chunk (and get the fileid)
+    worker = new Worker('hushfile-upload-worker.js');
 
-	//make the next section visible
-	$('#uploaddone').addClass('icon-spinner icon-spin');
+    // add listener for when the worker is done
+    worker.addEventListener('message', function(e) {
+        if(e.data.result=='ok') {
+            // get the data from the workers response
+            if(e.data.chunknumber) {
+                // mark this chunk as done
+                chunkstate[e.data.chunknumber] = 'done';
+                
+                // this was the first chunk so the fileid and uploadpassword is returned after upload
+                fileid = e.data.fileid;
+                uploadpassword = e.data.uploadpassword;
+                
+                // any remaining chunks ?
+                if(chunkcount > 1) {
+                    // TODO spawn workers to handle remaining chunks
+                } else {
+                    // only one chunk, finish the upload
+                    hfFinishUpload();
+            } else {
+                chunkstate[e.data.chunknumber] = 'failed';
+            };                
+        };
+        
+        // terminate the worker
+        worker.terminate(); 
+    }, false);
 
-	setTimeout('hfUpload(cryptoobject,metadataobject,deletepassword, 1024)',1000);
-}
+    worker.postMessage({
+        'chunknumber': 0, 
+        'password': document.getElementById('password').value, 
+        'chunksize': chunksize, 
+        'file': evt.target.files[0],
+        'metadata': metadataobject
+    });
+};
+
+function hfFinishUpload() {
+    $.ajax({
+        url: '/api/finishupload',
+        type: 'POST',
+        data: formData,
+        dataType: 'json',
+        contentType: false,
+        processData: false,
+        success: function(responseText) {
+            try{
+                responseobject = JSON.parse(responseText);
+                // if everything went well, show the download link
+                if (responseobject.status=='ok') {
+                    hfUploadCompletion();
+                } else {
+                    $('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
+                };
+            } catch(err) {
+                $('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
+            }
+        },
+        error: function(err) {
+            $('#response').html('Something went wrong: ' + err);
+        }
+    });
+};
 
 
-//function to update progressbar with self defined values
-function hfUpdateProgressAbsolute(target, current, total) {
-	var temp = Math.round(current / total * 100);
-	$(target).width(temp + '%');
-	$(target).text(temp + '%');
-}
-
-
-//function to update progressbar with file
-function hfUpdateProgressComputable(target) {
-	return function(evt){
-		// evt is an ProgressEvent.
-		if (evt.lengthComputable) {
-			var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
-			// Increase the load_progress bar length.
-			$(target).width(percentLoaded + '%');
-			$(target).text(percentLoaded + '%');
-		}
-	}
-}
-
-
-//function to mark a step as completed (with checkbox and green colour)
-function hfCheckStep(checkbox, label) {
-	$(checkbox).removeClass('icon-spinner icon-spin icon-check-empty').addClass('icon-check');
-	$(label).css('color', 'green');
-}
+function hfGetChunkSize() {
+    // check if the default chunksize from client config 
+    // is larger than the servers maximum chunksize
+    if (config.default_chunksize_bytes > serverinfo.max_chunksize_bytes) {
+        // clients default_chunksize_bytes is larger 
+        // than servers max_chunksize_bytes, so use the servers max_chunksize_bytes
+        // as the chunksize instead
+        return serverinfo.max_chunksize_bytes;
+    } else {
+        // just use the clients default_chunksize_bytes
+        return config.default_chunksize_bytes;
+    }
+};
 
 
 //function invoked after upload, displaying the url
-function hfUploadCompletion(responseobject) {
+function hfUploadCompletion() {
 	// Ensure that the load_progress bar displays 100% at the end.
 	hfUpdateProgressAbsolute('#uploadprogressbar', 1, 1);
 	$('#read_progress_div').css('color','green');
@@ -106,104 +145,12 @@ function hfUploadCompletion(responseobject) {
 
 	//get current URL
 	basepath = window.location.protocol + '//' + window.location.host + '/';
-	url = basepath+responseobject.fileid+'#'+$('#password').val();
+	url = basepath+fileid+'#'+$('#password').val();
 
 	$('#response')
 		.show()
 		.html('<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="'+url+'">Go to url</a>');
 	$('#url-textfield').select()
-}
-
-
-//function to upload the remaining chunks
-function hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, start, completion) {
-	var end = start + chunksize;
-	var chunkdata = cryptoobject.toString().substring(start, end);
-	var chunknumber = start/chunksize; //this should give an integer ;)
-	var totalchunks = Math.ceil(cryptoobject.toString().length/chunksize);
-	var last = cryptoobject.toString().length < end;
-
-	var formData = new FormData();
-	formData.append('fileid', fileid);
-	formData.append('cryptofile', chunkdata);
-	formData.append('uploadpassword', uploadpassword);
-	formData.append('chunknumber', chunknumber);
-	formData.append('finishupload', last);
-
-	$.ajax({
-		url: '/api/upload',
-		type: 'POST',
-		data: formData,
-		dataType: 'json',
-		contentType: false,
-		processData: false,
-		success: function(responseText) {
-			try{
-				responseobject = JSON.parse(responseText);
-				if (responseobject.status=='ok') {
-					if(responseobject.finished) {
-						completion(responseobject);	
-					} else {
-						hfUpdateProgressAbsolute('#uploadprogressbar', chunknumber+1, totalchunks);
-						hfUploadChunk(fileid, cryptoobject, uploadpassword, chunksize, end, completion);
-					}
-				} else {
-					$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
-				}
-			} catch(err) {
-				$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
-			}
-		},
-		error: function(err) {
-			$('#response').html('Something went wrong: ' + err);
-		}
-	});
-}
-
-
-//function to upload the first chunk and metadata
-function hfUpload(cryptoobject, metadataobject, deletepassword, chunksize) {
-	chunksize = chunksize*1000; //transform to MB
-	var chunkdata = cryptoobject.toString().substring(0, chunksize);
-	var shortcircuit = cryptoobject.toString().length < chunksize;
-	
-	if(shortcircuit) xhr.onprogress = hfUpdateProgressComputable('#uploadprogressbar');
-
-	var formData = new FormData();
-	formData.append('cryptofile', chunkdata);
-	formData.append('metadata', metadataobject);
-	formData.append('deletepassword', deletepassword);
-	formData.append('chunknumber', 0);
-	formData.append('finishupload', shortcircuit);
-
-	$.ajax({
-		url: '/api/upload',
-		type: 'POST',
-		data: formData,
-		dataType: 'json',
-		contentType: false,
-		processData: false,
-		success: function(responseText) {
-			try {
-				responseobject = JSON.parse(responseText);
-				if (responseobject.status=='ok') {
-					if(responseobject.finished){
-						hfUploadCompletion(responseobject);
-					} else {
-						hfUpdateProgressAbsolute('#uploadprogressbar', 1, Math.max(1, Math.ceil(cryptoobject.toString().length/chunksize)));
-						hfUploadChunk(responseobject.fileid, cryptoobject, responseobject.uploadpassword, chunksize, chunksize, hfUploadCompletion);
-					}
-				} else {
-					$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
-				}
-			} catch(err) {
-				$('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');
-			}
-		},
-		error: function(err) {
-			$('#response').html('Something went wrong: ' + err);
-		}
-	});
 }
 
 

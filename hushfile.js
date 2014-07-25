@@ -1,9 +1,9 @@
-// load and apply config
+// load and apply client config
 var xhr = new XMLHttpRequest();
 xhr.open('GET', '/hushfile-webclient-config.json', true);
 xhr.onload = function(e) {
 	if (this.status == 200) {
-		var config = JSON.parse(xhr.responseText);
+		config = JSON.parse(xhr.responseText);
 		
 		// handle footer config
 		if(!(config.footer.showfooter)) {
@@ -48,13 +48,36 @@ xhr.onload = function(e) {
 				document.getElementById('navmenu').appendChild(li);
 			}
 		}
-		// configuration OK, handle request
-		hfhandlerequest();
 	} else {
-		// unable to get config, use defaults
-		hfhandlerequest();
+		// unable to get config, show error
+        hfSetContent('<div class="alert alert-error">Unable to get client config, contact operator.</div>\n','upload');
+        return;
 	};
 };
 
-// send initial request to get config
+// send initial request to get client config
 xhr.send();
+
+
+// load serverinfo
+var xhr2 = new XMLHttpRequest();
+xhr2.open('GET', '/api/serverinfo', true);
+xhr2.onload = function(e) {
+	if (this.status == 200) {
+		serverinfo = JSON.parse(xhr2.responseText);
+        // OK, handle request
+        hfhandlerequest();
+	} else {
+        // unable to get serverinfo, show error
+        hfSetContent('<div class="alert alert-error">Unable to get serverinfo, contact operator</div>\n','upload');
+        return;
+	};
+};
+
+// send initial request to get server settings
+xhr2.send();
+
+if(typeof(Worker) == "undefined") {
+    // web workers not supported
+    alert("web workers not supported in this browser");
+};

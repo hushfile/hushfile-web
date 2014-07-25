@@ -11,5 +11,6 @@
         {
             "About": "about.html"
         }
-    ]
+    ],
+    "default_chunksize_bytes": 1048576
 }
