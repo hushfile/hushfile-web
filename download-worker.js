@@ -14,7 +14,7 @@ onmessage = function(event) {
 			ui8a = CryptoJS.enc.u8array.stringify(decryptedwords);
 			foo = new Blob([ui8a], message.type);
 			var fs = requestFileSystemSync(PERSISTENT, message.size);
-			
+			console.log("blobsize"+foo.size+" position: " + message.start);
 			var file = fs.root.getFile('hushfile.temp',{create: !(message.start > 0), exclusive: false});
 			var writer = file.createWriter();
 			writer.seek(message.start);

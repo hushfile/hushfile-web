@@ -98,8 +98,10 @@ function hfDownload(fileid, totalchunks, totalsize) {
 	 var persistentStorage = navigator.persistentStorage || navigator.webkitPersistentStorage;
 	 persistentStorage.queryUsageAndQuota(
 		function (used, remaining) {
+
 			persistentStorage.requestQuota(totalsize, 
 				function(bytes) {
+					console.log(bytes + " available");
 					hfDownloadChunk(fileid, password, totalsize, function(fileblob) {
 						//done downloading, make downloading div green and change icon
 						$('#downloading').css('color', 'green');
