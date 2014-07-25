@@ -61,15 +61,13 @@
         <script src="hushfile-common.js"></script>
         <script src="hushfile-upload.js"></script>
         <script src="hushfile-download.js"></script>
-        <script src="hushfile.js"></script>
         <script>
             $(document).ready(function() {
                 // activate dismiss/close function of any bootstrap alert boxes
                 $(".alert").alert();
                 
-                //activate bootstrapswitch button, with delay as it doesn't work otherwise
-                // disabled for now
-                //setTimeout("$('.switch')['bootstrapSwitch']()",300);
+                // get configs and handle request
+                hfGetConfigs();
             });
         </script>
     </body>

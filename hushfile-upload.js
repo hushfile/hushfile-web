@@ -3,7 +3,6 @@ function hfHandleFileSelect(evt) {
 	// show upload page elements
 	$('#fileselectdiv').hide();
 	$('#read_progress_div, #encrypting, #uploading').css('display', 'block');
-	
 
 	// get file info and show it to the user
 	filename = evt.target.files[0].name;
@@ -151,4 +150,4 @@ function hfUploadCompletion() {
 		.show()
 		.html('<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="'+url+'">Go to url</a>');
 	$('#url-textfield').select()
-}
+};
