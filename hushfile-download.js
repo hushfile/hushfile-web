@@ -139,12 +139,10 @@ function hfDownload(fileid, totalchunks, totalsize) {
 			}
 
 			if(totalsize < remaining) {
-					console.log(remaining + " available");
 					hfDownloadChunk(fileid, password, totalsize, success);
 			} else {
 				persistentStorage.requestQuota(totalsize, 
 					function(bytes) {
-						console.log("got more" + bytes);
 						hfDownloadChunk(fileid, password, totalsize, success)
 					}, 
 					function() {
