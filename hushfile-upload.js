@@ -72,6 +72,7 @@ function hfDoUpload() {
                 } else {
                     // only one chunk, finish the upload
                     hfFinishUpload();
+                };
             } else {
                 chunkstate[e.data.chunknumber] = 'failed';
             };                
