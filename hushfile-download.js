@@ -98,52 +98,60 @@ function hfDownload(fileid, totalchunks, totalsize) {
 	 var persistentStorage = navigator.persistentStorage || navigator.webkitPersistentStorage;
 	 persistentStorage.queryUsageAndQuota(
 		function (used, remaining) {
+			var success = function(fileblob) {
+				//done downloading, make downloading div green and change icon
+				$('#downloading').css('color', 'green');
+				$('#downloadingdone').removeClass('icon-spinner icon-spin').addClass("icon-check"); //explicitly clear classes?
 
-			persistentStorage.requestQuota(totalsize, 
-				function(bytes) {
-					console.log(bytes + " available");
-					hfDownloadChunk(fileid, password, totalsize, function(fileblob) {
-						//done downloading, make downloading div green and change icon
-						$('#downloading').css('color', 'green');
-						$('#downloadingdone').removeClass('icon-spinner icon-spin').addClass("icon-check"); //explicitly clear classes?
+				//make the decrypting div visible
+				$('#decrypting').show().css('color', 'green');
 
-						//make the decrypting div visible
-						$('#decrypting').show().css('color', 'green');
+				//done decrypting, change icon and make div green
+				$('#decryptingdone').removeClass('icon-spinner icon-spin').addClass("icon-check");
+				
+				// download button
+				a = document.createElement("a");
+				a.href = window.URL.createObjectURL(fileblob);
+				a.download = $('#filename').html();
+				linkText = document.createTextNode(" Download");
+				i = document.createElement("i");
+				i.className="icon-save icon-large";
+				a.appendChild(i);
+				a.appendChild(linkText);
+				a.className = "btn btn-large btn-primary btn-success";
+				$('#downloaddiv').append(a);
+				
+				//make div visible
+				$('#downloaddiv').show();
+				
+				// if this is an image, make a preview
+				if((/image/i).test($('#mimetype').html())){
+					img = document.createElement("img");
+					img.className="img-rounded";
+					img.src = window.URL.createObjectURL(fileblob);
+					a = document.createElement("a");
+					a.href = window.URL.createObjectURL(fileblob);
+					a.download = document.getElementById('filename').innerHTML;
+					a.appendChild(img);
+					$('#filepreview').append(a);
+					$('#previewdiv').show();
+				};
+			}
 
-						//done decrypting, change icon and make div green
-						$('#decryptingdone').removeClass('icon-spinner icon-spin').addClass("icon-check");
-						
-						// download button
-						a = document.createElement("a");
-						a.href = window.URL.createObjectURL(fileblob);
-						a.download = $('#filename').html();
-						linkText = document.createTextNode(" Download");
-						i = document.createElement("i");
-						i.className="icon-save icon-large";
-						a.appendChild(i);
-						a.appendChild(linkText);
-						a.className = "btn btn-large btn-primary btn-success";
-						$('#downloaddiv').append(a);
-						
-						//make div visible
-						$('#downloaddiv').show();
-						
-						// if this is an image, make a preview
-						if((/image/i).test($('#mimetype').html())){
-							img = document.createElement("img");
-							img.className="img-rounded";
-							img.src = window.URL.createObjectURL(fileblob);
-							a = document.createElement("a");
-							a.href = window.URL.createObjectURL(fileblob);
-							a.download = document.getElementById('filename').innerHTML;
-							a.appendChild(img);
-							$('#filepreview').append(a);
-							$('#previewdiv').show();
-						};
-				});
-			}, function() {
-				alert("An error was encountered downloading filedata.");
-			})
+			if(totalsize < remaining) {
+					console.log(remaining + " available");
+					hfDownloadChunk(fileid, password, totalsize, success);
+			} else {
+				persistentStorage.requestQuota(totalsize, 
+					function(bytes) {
+						console.log("got more" + bytes);
+						hfDownloadChunk(fileid, password, totalsize, success)
+					}, 
+					function() {
+						alert("An error was encountered downloading filedata.");
+					}
+				);
+			}
 		},
 		function(e) {
 			alert("An error was encountered downloading filedata.");
