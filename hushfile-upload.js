@@ -152,15 +152,3 @@ function hfUploadCompletion() {
 		.html('<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br/><input type="text" id="url-textfield" class="span8 search-query" value="'+url+'"/>&nbsp;<a class="btn btn-success" href="'+url+'">Go to url</a>');
 	$('#url-textfield').select()
 }
-
-
-// return a random password of the given length
-function hfRandomPassword(length){
-	var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_-";
-	var pass="";
-	var randomBuf = new Uint8Array(length);
-	window.crypto.getRandomValues(randomBuf);
-	for(var i=0;i<length;i++)
-	pass += chars.charAt(Math.floor(randomBuf[i]/4));
-	return pass;
-}

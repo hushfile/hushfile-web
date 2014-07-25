@@ -57,6 +57,19 @@ function hfSetContent(content,menuitem) {
 	};
 };
 
+
+// return a random password of the given length
+function hfRandomPassword(length){
+	var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_-";
+	var pass="";
+	var randomBuf = new Uint8Array(length);
+	window.crypto.getRandomValues(randomBuf);
+	for(var i=0;i<length;i++)
+	pass += chars.charAt(Math.floor(randomBuf[i]/4));
+	return pass;
+};
+
+
 // function to show pages from custom menu items
 function hfShowPage(url, key, success, erroŕ) {
 	var xhr = new XMLHttpRequest();
