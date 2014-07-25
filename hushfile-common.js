@@ -58,7 +58,7 @@ function hfSetContent(content,menuitem) {
 };
 
 // function to show pages from custom menu items
-function hfShowPage(url, key, success=undefined, erroŕ=undefined) {
+function hfShowPage(url, key, success, erroŕ) {
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', '/'+url, true);
 	xhr.onload = function(e) {
