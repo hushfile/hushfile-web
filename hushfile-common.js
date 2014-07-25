@@ -58,7 +58,7 @@ function hfSetContent(content,menuitem) {
 };
 
 // function to show pages from custom menu items
-function hfShowPage(url,key, completion) {
+function hfShowPage(url, key, success=undefined, erroŕ=undefined) {
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', '/'+url, true);
 	xhr.onload = function(e) {
@@ -82,7 +82,7 @@ function hfShowPage(url,key, completion) {
 				hfGetMetadata(fileid);
 			}
 
-			return completion(key)
+			if(success) success(key)
 		} else {
 			alert("Unable to get content, check client config!");
 		};
