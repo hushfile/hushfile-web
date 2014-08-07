@@ -36,15 +36,22 @@ var HushFile = function(config) {
 		
 		size = file.size;
 		var worker = new Worker('cryptfile-uploader.js')
+		console.log("chunksize: " + chunksize);
+		var tmp = 0;
+		var password = hfRandomPassword(16);
+		var deletepassword = hfRandomPassword(40);
+
+		var start;
+		var end;
 		worker.onmessage = function(e) {
 			var message = e.data;
-			var tmp = 0;
 			switch(message.type) {
 				case "init":
 					console.log("starting");
-					var start = tmp;
-					var end = size; //Math.min(size, tmp + self.chunksize);
-					worker.postMessage({type: "read", start: tmp, end: end, file: file, password: hfRandomPassword(16), deletepassword: hfRandomPassword(40)});
+					start = tmp;
+					end = Math.min(size, start + chunksize);
+
+					worker.postMessage({type: "read", start: tmp, end: end, file: file, password: password, deletepassword: deletepassword});
 					break;
 
 				case "read":
@@ -53,12 +60,17 @@ var HushFile = function(config) {
 
 				case "encrypt":
 					console.log("file encrypted");
-					worker.postMessage({type: "upload", chunknumber: 0});
+					worker.postMessage({type: "upload", chunknumber: 0, finishupload: true});
 					break;
 
 				case "upload":
-
 					console.log("file uploaded");
+
+					/*if(end < size) {
+						start = end;
+						end = Math.min(size, end + chunksize);
+						worker.postMessage({type: "read", start: start, end: end, file: file, password: password, deletepassword: deletepassword});
+					}*/
 					break;
 
 				default:
@@ -66,7 +78,9 @@ var HushFile = function(config) {
 					break;
 			}
 		}
+		//init this
 		worker.postMessage({type:"init", filename: 'foo.txt', size: size, mimetype:'plain/text', deletepassword:'1234567890'});
+
 		/*var tmp = 0;
 		var workers = [];
 		var baton = 0;

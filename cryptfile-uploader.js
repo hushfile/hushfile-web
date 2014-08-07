@@ -24,20 +24,22 @@ function initialize(name, size, mimetype, deletepassword, password) {
 
 function read(file, start, end) {
 	//filecontents = reader.readAsArrayBuffer(file.slice(start, end));
-	filecontents = reader.readAsText(file); 
-	console.log("start: " + start + " end: " + end);
+	filecontents = reader.readAsText(file.slice(start, end)); 
+	
 	postMessage(({type: 'read', filecontents: filecontents}));
 }
 
 function encrypt() {
+	//Y U NO WORK?
 	//ui8a = new Uint8Array(filecontents);
 	//wordarray = CryptoJS.enc.u8array.parse(ui8a);
 	//cryptoobject = CryptoJS.AES.encrypt(wordarray, password);
 	cryptoobject = filecontents;
+
 	postMessage({type:"encrypt"});
 }
 
-function upload(chunknumber) {
+function upload(chunknumber, finishupload) {
 	var xhr = new XMLHttpRequest();
 	xhr.open('POST', '/api/upload', true);
 	xhr.onload = function(e) {
@@ -57,14 +59,16 @@ function upload(chunknumber) {
 		};
 	
 	}
-	console.log("Uploading");
-	console.log(cryptoobject);
 	var formData = "cryptofile=" + cryptoobject;
 	formData += "&metadata=" + metadataobject;
 	//formData += "&deletepassword=" + deletepassword;
 	formData += "&chunknumber=" + chunknumber;
-	formData += "&finishupload=true"
-	console.log(formData);
+	if(finishupload) {
+		formData += "&finishupload=true";
+	} else {
+		formData += "&finishupload=false";
+	}
+	console.log("Sending: " + formData);
 	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 	xhr.send(formData);
 }
@@ -85,7 +89,7 @@ onmessage = function (e) {
 			break;
 
 		case "upload":
-			upload(message.chunknumber);
+			upload(message.chunknumber, message.finishupload);
 			break;
 
 		case "abort":
