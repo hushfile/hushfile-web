@@ -15,7 +15,7 @@ var HushFile = function(config) {
 	config = config || {};
 
 	password = config.password || hfRandomPassword(16);
-	chunksize = config.chunksize || 1024;
+	chunksize = config.chunksize || 10;
 
 	//if(!password) password = hfRandomPassword(16);
 
@@ -26,7 +26,7 @@ var HushFile = function(config) {
 
 	}
 
-	this.upload = function(file) {
+	this.upload = function(file, success, error) {
 		//how many slices do we want?
 		//how many concurrent workers do we want?
 		//start a worker for each slice which
@@ -43,6 +43,8 @@ var HushFile = function(config) {
 
 		var start;
 		var end;
+		var fileid;
+		var uploadpassword;
 		worker.onmessage = function(e) {
 			var message = e.data;
 			switch(message.type) {
@@ -60,21 +62,27 @@ var HushFile = function(config) {
 
 				case "encrypt":
 					console.log("file encrypted");
-					worker.postMessage({type: "upload", chunknumber: 0, finishupload: true});
+					chunknumber = start / chunksize;
+					worker.postMessage({type: "upload", chunknumber: chunknumber, finishupload: !(end < size), fileid: fileid});
 					break;
 
 				case "upload":
-					console.log("file uploaded");
-
-					/*if(end < size) {
+					console.log("file uploaded" + message.response);
+					
+					if(end < size) {
 						start = end;
 						end = Math.min(size, end + chunksize);
+						fileid = message.response.fileid;
+						uploadpassword = message.response.uploadpassword;
 						worker.postMessage({type: "read", start: start, end: end, file: file, password: password, deletepassword: deletepassword});
-					}*/
+					} else {
+						if(success) success(message.response);
+					}
 					break;
 
 				default:
 					console.log("This is an error");
+					if(error) error();
 					break;
 			}
 		}

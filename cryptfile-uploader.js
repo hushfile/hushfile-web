@@ -8,6 +8,9 @@ var cryptoobject;
 var deletepassword;
 var metadataobject;
 
+var fileid;
+var uploadpassword;
+
 function initialize(name, size, mimetype, deletepassword, password) {
 	reader = new FileReaderSync();
 	reader.onload = function(e) {
@@ -50,7 +53,9 @@ function upload(chunknumber, finishupload) {
 			responseobject = eval('('+responseobject+')');
 			
 			if(responseobject.status == 'ok') {
-				postMessage({type: "upload"});	
+				fileid = responseobject.fileid;
+				uploadpassword = responseobject.uploadpassword;
+				postMessage({type: "upload", response: responseobject});
 			} else {
 				postMessage({type:"error", message:"Upload unsuccessful"});
 			}
@@ -60,13 +65,21 @@ function upload(chunknumber, finishupload) {
 	
 	}
 	var formData = "cryptofile=" + cryptoobject;
-	formData += "&metadata=" + metadataobject;
+	if(!chunknumber) {
+		formData += "&metadata=" + metadataobject;
+	}
 	//formData += "&deletepassword=" + deletepassword;
 	formData += "&chunknumber=" + chunknumber;
 	if(finishupload) {
 		formData += "&finishupload=true";
 	} else {
 		formData += "&finishupload=false";
+	}
+	if(fileid) {
+		formData += "&fileid=" + fileid;
+	}
+	if(uploadpassword) {
+		formData += "&uploadpassword=" + uploadpassword;
 	}
 	console.log("Sending: " + formData);
 	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
