@@ -17,23 +17,22 @@ function initialize(name, size, mimetype, deletepassword, password) {
 	reader.onload = function(e) {
 		postMessage({type:"read"});
 	}
+
 	self.password = password;
 	self.deletepassword = deletepassword;
 	metadatajson = '{"filename": "' + name + '", "mimetype": "' + mimetype + '", "filesize": "' + size + '", "deletepassword": "' + deletepassword + '"}';
-	
 	metadataobject = CryptoJS.AES.encrypt(metadatajson, password);
-	
+
 	postMessage({type:"init"});
 }
 
 function read(file, start, end) {
 	filecontents = reader.readAsArrayBuffer(file.slice(start, end));
-	
+
 	postMessage(({type: 'read', filecontents: filecontents}));
 }
 
 function encrypt() {
-
 	ui8a = new Uint8Array(filecontents);
 	wordarray = CryptoJS.enc.u8array.parse(ui8a);
 	cryptoobject = CryptoJS.AES.encrypt(wordarray, password);
@@ -42,16 +41,14 @@ function encrypt() {
 }
 
 function upload(chunknumber, finishupload) {
-
 	var xhr = new XMLHttpRequest();
 	xhr.open('POST', '/api/upload', true);
 	xhr.onload = function(e) {
 		if (this.status == 200) {
-			
 			//wtf? fix this
 			var responseobject = eval("("+xhr.responseText+")");
 			responseobject = eval('('+responseobject+')');
-			
+
 			if(responseobject.status == 'ok') {
 				fileid = responseobject.fileid;
 				uploadpassword = responseobject.uploadpassword;
@@ -61,8 +58,7 @@ function upload(chunknumber, finishupload) {
 			}
 		} else {
 			postMessage({type:"error", message: "Unable to get content, check client config!"});
-		};
-	
+		}
 	}
 
 	var formdata = '{"cryptofile":"' + cryptoobject + '","chunknumber":"' + chunknumber+'"';
@@ -104,6 +100,5 @@ onmessage = function (e) {
 
 		case "close":
 			break;
-
 	}
-};
+}

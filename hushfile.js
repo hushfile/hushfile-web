@@ -24,20 +24,24 @@ var HushFileUploader = function(config) {
 	_onprogress = function(progress) {
 		var event = progress.event;
 		delete progress.event;
-		
+
 		switch(event) {
 			case 'loadstart':
 				if(onloadstart) onloadstart(progress);
 				break;
+
 			case 'progress':
 				if(onprogress) onprogress(progress);
 				break;
+
 			case 'load':
 				if(onload) onload(progress);
 				break;
+
 			case 'loadend':
 				if(onloadend) onloadend(progress);
 				break;
+
 			case 'error':
 			default:
 				if(onerror) onerror(progress);
@@ -46,15 +50,8 @@ var HushFileUploader = function(config) {
 	}
 
 	this.upload = function(file, success, error) {
-		//how many slices do we want?
-		//how many concurrent workers do we want?
-		//start a worker for each slice which
-		//1. Reads the slice
-		//2. encrypts the slice
-		//3. uploads it
-		
 		var size = file.size;
-		var worker = new Worker('cryptfile-uploader.js')
+		var worker = new Worker('cryptfile-uploader.js');
 		var tmp = 0;
 		var password = hfRandomPassword(16);
 		var deletepassword = hfRandomPassword(40);
@@ -102,26 +99,9 @@ var HushFileUploader = function(config) {
 					break;
 			}
 		}
+
 		_onprogress({event: 'loadstart', filename: file.name, size: file.size, type: file.type});
-		//init this
 		worker.postMessage({type:"init", filename: file.name, size: file.size, mimetype:file.type, deletepassword:deletepassword, password: password});
-
-		/*var tmp = 0;
-		var workers = [];
-		var baton = 0;
-		for(var i = 0; i < self.workers; i++) {
-			var worker = new Worker('cryptfile-upload.js');	
-
-			
-		}
-		
-		while(tmp < self.size) {
-			
-			var start = workers.size * self.chunksize;
-			worker.postMessage({file: file, start: start, end: Math.min(self.size, start + end), transporter: undefined});
-			workers.push(worker);
-			tmp += self.chunksize;
-		}*/
 	}
 }
 
@@ -140,20 +120,24 @@ var HushFileDownloader = function(config) {
 	_onprogress = function(progress) {
 		var event = progress.event;
 		delete progress.event;
-		
+
 		switch(event) {
 			case 'loadstart':
 				if(onloadstart) onloadstart(progress);
 				break;
+
 			case 'progress':
 				if(onprogress) onprogress(progress);
 				break;
+
 			case 'load':
 				if(onload) onload(progress);
 				break;
+
 			case 'loadend':
 				if(onloadend) onloadend(progress);
 				break;
+
 			case 'error':
 			default:
 				if(onerror) onerror(progress);
@@ -161,10 +145,8 @@ var HushFileDownloader = function(config) {
 		}
 	}
 
-
 	this.download = function(fileid, password, success, error) {
 		var cryptfile;
-
 		var worker = new Worker('cryptfile-downloader.js');
 		worker.onmessage = function(e) {
 			var message = e.data;
@@ -176,11 +158,10 @@ var HushFileDownloader = function(config) {
 			var totaldownload = 0;
 			switch(message.type) {
 				case "init":
-
 					totalchunks = message.chunks;
 					totalsize = message.totalsize;
 					filesize = message.filesize;
-					
+
 					cryptfile = new CryptFile(message.filename, filesize, password, function(){
 						chunknumber++;
 						if(chunknumber < totalchunks) {
@@ -199,15 +180,18 @@ var HushFileDownloader = function(config) {
 					_onprogress({event: 'loadstart', file: file});
 					worker.postMessage({type:"download", chunknumber:0});
 					break;
+
 				case "download":
 					worker.postMessage({type: 'decrypt', cryptfile: message.data});
 					break;
+
 				case "decrypt":
 					totaldownload += message.data.size;
 
 					_onprogress({event: 'progress', loaded: totaldownload, total: filesize}); //For some odd reason filesize is undefined :(
 					cryptfile.append(message.data);
 					break;
+
 				default:
 					_onprogress({event: 'error', message: message});
 					break;
@@ -215,4 +199,4 @@ var HushFileDownloader = function(config) {
 		}
 		worker.postMessage({type:"init", fileid: fileid, password: password});
 	}
-};
+}

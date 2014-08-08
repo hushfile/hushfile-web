@@ -95,10 +95,9 @@ function download(chunknumber) {
 
 function decrypt(cryptfile) {
 	decryptedwords = CryptoJS.AES.decrypt(cryptfile, password);
-	
 	ui8a = CryptoJS.enc.u8array.stringify(decryptedwords);
 	blob = new Blob([ui8a], {type: metadata.type});
-	postMessage({type: 'decrypt', data: blob});		
+	postMessage({type: 'decrypt', data: blob});
 }
 
 function abort() {
@@ -113,7 +112,7 @@ onmessage = function(e) {
 	var message = e.data;
 	switch(message.type) {
 		case "init":
-			initialize(message.fileid, message.password)
+			initialize(message.fileid, message.password);
 			break;
 
 		case "download":

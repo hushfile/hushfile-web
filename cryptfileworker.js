@@ -1,14 +1,12 @@
-importScripts("js/cryptojs-aes.js");
- 
 self.requestFileSystemSync = self.webkitRequestFileSystemSync || self.requestFileSystemSync;
- 
+
 var file = null;
 var pass = "";
 var writer;
 
 function initialize(filename, size, passphrase) {
 	pass = passphrase;
- 
+
 	try {
 		var fs = requestFileSystemSync(PERSISTENT, size);
 		file = fs.root.getFile(filename, { create: true, exclusive: false });
@@ -18,51 +16,51 @@ function initialize(filename, size, passphrase) {
 		postMessage({ type: "error", message: exception.message });
 		return;
 	}
-	 
+
 	postMessage({ type: "initialized"});
-};
- 
-function stop() {
-if (file) {
-file.remove();
 }
- 
+
+function stop() {
+	if (file) {
+	file.remove();
+}
+
 postMessage({ type: "stopped" });
-self.close();
-};
- 
+	self.close();
+}
+
 function append(data) {
 	if (! file) {
-	return;
+		return;
 	}
 
 	writer.seek(writer.length);
 	writer.write(data);
-	 
+
 	postMessage({ type: "written" });
-};
- 
+}
+
 onmessage = function (e) {
-var message = e.data;
+	var message = e.data;
  
-if (!message) {
-return;
+	if (!message) {
+		return;
+	}
+ 
+	switch (message.type) {
+		case "initialize":
+			initialize(message.filename, message.size, message.passphrase);
+			break;
+
+		case "stop":
+			stop();
+			break;
+
+		case "append":
+			append(message.data);
+			break;
+
+		default:
+			break;
+	}
 }
- 
-switch (message.type) {
-case "initialize":
-initialize(message.filename, message.size, message.passphrase);
-break;
- 
-case "stop":
-stop();
-break;
- 
-case "append":
-append(message.data);
-break;
- 
-default:
-break;
-}
-};
