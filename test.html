@@ -13,7 +13,7 @@
     </head>
     
     <body style="padding: 80px 0 80px 0;">
-        
+        <input type="file" id="files" />
         <script src="js/jquery-1.9.1.min.js"></script>
         <script src="js/bootstrap.min.js"></script>
         <script src="js/bootbox.min.js"></script>
@@ -25,6 +25,7 @@
         <script src="hushfile-upload.js"></script>
         <script src="hushfile-download.js"></script> -->
         <script src="hushfile.js"></script>
+        <script src="cryptfile.js"></script>
         <script>
             $(document).ready(function() {
                 // activate dismiss/close function of any bootstrap alert boxes
@@ -34,13 +35,21 @@
                 var file = new Blob(["foobarbazetcetc" + "birdiebirdieboo"], {type: "text/plain;charset=UTF-8"});
                 //var file = new File(b, 'foo.txt');
 
-                hushfile.upload(file, function(response) {
-                    console.log("yes! now lets download some shit");
-                    console.log(response);
+                /*hushfile.upload(file, function(fileid, password) {
+                    console.log("yes! now lets download some shit" + fileid);
+                    hushfile.download(fileid, password);
                 },
                 function() {
+                });*/
+                $('#files').change(function() {
+                    hushfile.upload(this.files[0], function(fileid, password) {
+                        //$('document').append("<button id='foobar'>Download</button>");
+                        document.write('<button id="foobar">Download</button>');
+                        $('#foobar').click(function() {
+                            hushfile.download(fileid, password);
+                        });
+                    });
                 });
-                
             });
         </script>
     </body>

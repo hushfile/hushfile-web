@@ -4,33 +4,30 @@ var fileid;
 var password;
 var metadata;
 
+function getApiExists(fileid, success, error) {
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', '/api/exists?fileid='+fileid, true);
+	xhr.onload = function(e) {
+		if(xhr.status == 200) {
+			var responseobject = eval('(' + eval('(' + xhr.responseText + ')') + ')');
+			console.log(responseobject);
+			if (responseobject.exists) {
+				console.log("lala");
+				// fileid exists
+				if(success) success(responseobject);
+			} else {
+				if(error) error(e);
+			}
+		}
+	}
+	xhr.send();
+}
+
 function getApiMetadata(success, error) {
 	var xhr2 = new XMLHttpRequest();
 	xhr2.open('GET', '/api/metadata?fileid='+fileid, true);
 	xhr2.onload = function(e) {
 		if (this.status == 200) {
-			// decrypt metadata
-			/*try {
-				metadata = CryptoJS.AES.decrypt(this.response, password).toString(CryptoJS.enc.Utf8);
-			} catch(err) {
-				hfSetContent(content,'download');
-				return;
-			};*/
-			
-			/*if(metadata != 'undefined') {
-				try {
-					var jsonmetadata = JSON.parse(metadata);
-					$('#metadata').show();
-					$('#filename').html(jsonmetadata.filename);
-					$('#mimetype').html(jsonmetadata.mimetype);
-					$('#filesize').html(jsonmetadata.filesize);
-					$('#deletepassword').html(jsonmetadata.deletepassword);
-				} catch(err) {
-					hfSetContent('<div class="alert alert-error">Unable to parse metadata, sorry.</div>\n','download');
-					return;
-				};
-			};*/
-
 			console.log(this.responseText);
 			var responseJson = eval('(' + this.responseText + ')');
 
@@ -86,16 +83,22 @@ function getApiFile(chunknumber, success, error) {
 function initialize(fileid, password) {
 	self.fileid = fileid;
 	self.password = password;
-
-	getApiMetadata(function(metadata) {
-		self.metadata = metadata;
-		getApiIp(function(ip) { 
-			var message = metadata;
-			message.type = "init";
-			message.ip = ip.uploadip;
-			postMessage(metadata);
-		});	
-	});	
+	getApiExists(fileid, function(existsdata) {
+		console.log("exists");
+		getApiMetadata(function(metadata) {
+			self.metadata = metadata;
+			getApiIp(function(ip) { 
+				var message = metadata;
+				message.type = "init";
+				message.ip = ip.uploadip;
+				message.chunks = existsdata.chunks;
+				message.totalsize = existsdata.chunks;
+				postMessage(metadata);
+			});
+		});
+	}, function(e) {
+		postMessage({type:"error"});
+	});
 }
 
 function download(chunknumber) {

@@ -4,13 +4,16 @@ self.requestFileSystemSync = self.webkitRequestFileSystemSync || self.requestFil
  
 var file = null;
 var pass = "";
- 
+var writer;
+
 function initialize(filename, size, passphrase) {
 	pass = passphrase;
  
 	try {
 		var fs = requestFileSystemSync(PERSISTENT, size);
 		file = fs.root.getFile(filename, { create: true, exclusive: false });
+		writer = file.createWriter();
+		writer.truncate(0);
 	} catch (exception) {
 		postMessage({ type: "error", message: exception.message });
 		return;
@@ -32,8 +35,7 @@ function append(data) {
 	if (! file) {
 	return;
 	}
-	 
-	var writer = file.createWriter();
+
 	writer.seek(writer.length);
 	writer.write(new Blob([data], {type: 'text/plain'}));
 	 

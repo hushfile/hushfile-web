@@ -19,37 +19,38 @@ function initialize(name, size, mimetype, deletepassword, password) {
 	self.password = password;
 	self.deletepassword = deletepassword;
 	metadatajson = '{"filename": "' + name + '", "mimetype": "' + mimetype + '", "filesize": "' + size + '", "deletepassword": "' + deletepassword + '"}';
-	metadataobject = metadatajson;
-//    metadataobject = CryptoJS.AES.encrypt(metadatajson, password);
+	
+	metadataobject = CryptoJS.AES.encrypt(metadatajson, password);
 	
 	postMessage({type:"init"});
 }
 
 function read(file, start, end) {
-	//filecontents = reader.readAsArrayBuffer(file.slice(start, end));
-	filecontents = reader.readAsText(file.slice(start, end)); 
+	filecontents = reader.readAsArrayBuffer(file.slice(start, end));
 	
 	postMessage(({type: 'read', filecontents: filecontents}));
 }
 
 function encrypt() {
 	//Y U NO WORK?
-	//ui8a = new Uint8Array(filecontents);
-	//wordarray = CryptoJS.enc.u8array.parse(ui8a);
-	//cryptoobject = CryptoJS.AES.encrypt(wordarray, password);
-	cryptoobject = filecontents;
+	ui8a = new Uint8Array(filecontents);
+	wordarray = CryptoJS.enc.u8array.parse(ui8a);
+	cryptoobject = CryptoJS.AES.encrypt(wordarray, password);
 
 	postMessage({type:"encrypt"});
 }
 
 function upload(chunknumber, finishupload) {
+
 	var xhr = new XMLHttpRequest();
 	xhr.open('POST', '/api/upload', true);
 	xhr.onload = function(e) {
 		if (this.status == 200) {
 			
+	console.log(xhr.responseText);
 			//wtf? fix this
 			var responseobject = eval("("+xhr.responseText+")");
+	console.log('jaja');
 			responseobject = eval('('+responseobject+')');
 			
 			if(responseobject.status == 'ok') {
@@ -64,33 +65,28 @@ function upload(chunknumber, finishupload) {
 		};
 	
 	}
-	var formData = "cryptofile=" + cryptoobject;
-	if(!chunknumber) {
-		formData += "&metadata=" + metadataobject;
-	}
-	//formData += "&deletepassword=" + deletepassword;
-	formData += "&chunknumber=" + chunknumber;
+
+	var formdata = '{"cryptofile":"' + cryptoobject + '","chunknumber":"' + chunknumber+'"';
+	if(!chunknumber) formdata += ',"metadata":"' + metadataobject + '"';
 	if(finishupload) {
-		formData += "&finishupload=true";
+		formdata += ',"finishupload":"true"';
 	} else {
-		formData += "&finishupload=false";
+		formdata += ',"finishupload":"false"';
 	}
-	if(fileid) {
-		formData += "&fileid=" + fileid;
-	}
-	if(uploadpassword) {
-		formData += "&uploadpassword=" + uploadpassword;
-	}
-	console.log("Sending: " + formData);
-	xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-	xhr.send(formData);
+	if(fileid) formdata += ',"fileid":"' + fileid + '"';
+	if(uploadpassword) formdata += ',"uploadpassword":"' + uploadpassword + '"';
+	formdata += "}";
+	console.log("Sending: " + formdata);
+
+	xhr.setRequestHeader('Content-Type', 'application/json');
+	xhr.send(formdata);
 }
 
 onmessage = function (e) {
 	var message = e.data;
 	switch(message.type) {
 		case "init":
-			initialize(message.name, message.size, message.mimetype, message.deletepassword, message.password);
+			initialize(message.filename, message.size, message.mimetype, message.deletepassword, message.password);
 			break;
 
 		case "read":

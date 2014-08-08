@@ -17,10 +17,6 @@ var HushFile = function(config) {
 	password = config.password || hfRandomPassword(16);
 	chunksize = config.chunksize || 10;
 
-	//if(!password) password = hfRandomPassword(16);
-
-	
-
 	//eventhandler for a file select
 	this.select = function(evt) {
 
@@ -68,6 +64,7 @@ var HushFile = function(config) {
 
 				case "upload":
 					console.log("file uploaded" + message.response);
+					console.log(message.response);
 					
 					if(end < size) {
 						start = end;
@@ -76,7 +73,7 @@ var HushFile = function(config) {
 						uploadpassword = message.response.uploadpassword;
 						worker.postMessage({type: "read", start: start, end: end, file: file, password: password, deletepassword: deletepassword});
 					} else {
-						if(success) success(message.response);
+						if(success) success(message.response.fileid, password);
 					}
 					break;
 
@@ -87,7 +84,7 @@ var HushFile = function(config) {
 			}
 		}
 		//init this
-		worker.postMessage({type:"init", filename: 'foo.txt', size: size, mimetype:'plain/text', deletepassword:'1234567890'});
+		worker.postMessage({type:"init", filename: file.name, size: file.size, mimetype:file.type, deletepassword:deletepassword, password: password});
 
 		/*var tmp = 0;
 		var workers = [];
@@ -107,7 +104,47 @@ var HushFile = function(config) {
 		}*/
 	}
 
-	this.download = function() {
+	this.download = function(fileid, password, success, error) {
+		var cryptfile;
 
+		var worker = new Worker('cryptfile-downloader.js');
+		worker.onmessage = function(e) {
+			var message = e.data;
+			var chunknumber = 0;
+			var totalchunks;
+			var totalsize;
+			switch(message.type) {
+				case "init":
+					totalchunks = message.chunks;
+					totalsize = message.totalsize;
+
+					cryptfile = new CryptFile(message.filename, totalsize, password, function(){
+						chunknumber++;
+						if(chunknumber < totalchunks) {
+							worker.postMessage({type:"download", chunknumber: chunknumber});
+						} else {
+							var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+							requestFileSystem(PERSISTENT, totalsize, function(fs) {
+								var file = fs.root.getFile(message.filename, {}, function(fileEntry) {
+									console.log(fileEntry.toURL('text/plain'));
+									$(document).append("<a href='" + fileEntry.toURL('text/plain') + "'>wow</a>");
+								});
+							});
+						}
+					});
+
+					worker.postMessage({type:"download", chunknumber:0});
+					break;
+				case "download":
+					console.log("downloaded chunk: " + message.data);
+					cryptfile.append(message.data);
+					break;
+
+				default:
+					console.log("An error occured");
+					break;
+			}
+		}
+		worker.postMessage({type:"init", fileid: fileid, password: password});
 	}
 };
