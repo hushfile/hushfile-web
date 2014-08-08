@@ -2,7 +2,7 @@ var HushFileUploader = function(config) {
 	var self = this;
 	config = config || {};
 
-	chunksize = config.chunksize || 1024000;
+	chunksize = Math.floor((config.chunksize || 1024*1024)*2/3);
 
 	var onloadstart = config.onloadstart;
 	var onprogress = config.onprogress;
