@@ -36,7 +36,6 @@ function encrypt() {
 
 	ui8a = new Uint8Array(filecontents);
 	wordarray = CryptoJS.enc.u8array.parse(ui8a);
-	console.log(wordarray);
 	cryptoobject = CryptoJS.AES.encrypt(wordarray, password);
 
 	postMessage({type:"encrypt"});
@@ -49,10 +48,8 @@ function upload(chunknumber, finishupload) {
 	xhr.onload = function(e) {
 		if (this.status == 200) {
 			
-	console.log(xhr.responseText);
 			//wtf? fix this
 			var responseobject = eval("("+xhr.responseText+")");
-	console.log('jaja');
 			responseobject = eval('('+responseobject+')');
 			
 			if(responseobject.status == 'ok') {
@@ -78,7 +75,6 @@ function upload(chunknumber, finishupload) {
 	if(fileid) formdata += ',"fileid":"' + fileid + '"';
 	if(uploadpassword) formdata += ',"uploadpassword":"' + uploadpassword + '"';
 	formdata += "}";
-	console.log("Sending: " + formdata);
 
 	xhr.setRequestHeader('Content-Type', 'application/json');
 	xhr.send(formdata);

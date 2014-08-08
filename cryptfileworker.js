@@ -35,9 +35,7 @@ function append(data) {
 	if (! file) {
 	return;
 	}
-	console.log(writer.length);
-	console.log(data);
-	console.log(data.size);
+
 	writer.seek(writer.length);
 	writer.write(data);
 	 

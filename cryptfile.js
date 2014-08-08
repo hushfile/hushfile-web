@@ -54,7 +54,7 @@ this._worker.postMessage(message);
 };
  
 CryptFile.prototype.log = function (message) {
-console.log(this._filename + ": " + message);
+//console.log(this._filename + ": " + message);
 };
  
 CryptFile.prototype.append = function (data) {

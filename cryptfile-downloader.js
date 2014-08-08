@@ -10,9 +10,7 @@ function getApiExists(fileid, success, error) {
 	xhr.onload = function(e) {
 		if(xhr.status == 200) {
 			var responseobject = eval('(' + eval('(' + xhr.responseText + ')') + ')');
-			console.log(responseobject);
 			if (responseobject.exists) {
-				console.log("lala");
 				// fileid exists
 				if(success) success(responseobject);
 			} else {
@@ -29,7 +27,6 @@ function getApiMetadata(success, error) {
 	xhr2.onload = function(e) {
 		if (this.status == 200) {
 			var responseJson = eval('(' + CryptoJS.AES.decrypt(this.responseText, password).toString(CryptoJS.enc.Utf8) + ')');
-
 			if(success) success(responseJson);
 		} else {
 			//nop for now
@@ -43,8 +40,7 @@ function getApiIp(success, error) {
 	ipxhr.open('GET', '/api/ip?fileid='+fileid, true);
 	ipxhr.onload = function(e) {
 		if (this.status == 200) {
-			var responseJson = eval('(' + eval('(' + this.responseText + ')') + ')');
-			
+			var responseJson = eval('(' + eval('(' + this.responseText + ')') + ')');			
 			if(success) success(responseJson);
 		} else {
 			error(e);
@@ -59,22 +55,8 @@ function getApiFile(chunknumber, success, error) {
 	xmr.open('GET', '/api/file?fileid='+fileid+'&chunknumber='+chunknumber);
 	xmr.onload = function(e) {
 		if(this.status == 200) {
-			console.log(xmr.responseText);
-			console.log(password);
 			// decrypt the data
-			decryptedwords = CryptoJS.AES.decrypt(xmr.responseText, password);
-			console.log(decryptedwords);
-			ui8a = CryptoJS.enc.u8array.stringify(decryptedwords);
-			blob = new Blob([ui8a], {type: metadata.type});
-			
-			
-			/*var file = fs.root.getFile('hushfile.temp',{create: true, exclusive: false});
-			var writer = file.createWriter();
-			writer.seek(message.start);
-			writer.write(foo);
-			postMessage();*/
-
-			if(success) success(blob);
+			if(success) success(xmr.responseText);
 		} else {
 			if(error) error(e);
 		}
@@ -86,7 +68,6 @@ function initialize(fileid, password) {
 	self.fileid = fileid;
 	self.password = password;
 	getApiExists(fileid, function(existsdata) {
-		console.log("exists");
 		getApiMetadata(function(metadata) {
 			self.metadata = metadata;
 			getApiIp(function(ip) { 
@@ -112,8 +93,12 @@ function download(chunknumber) {
 	});
 }
 
-function decrypt() {
-
+function decrypt(cryptfile) {
+	decryptedwords = CryptoJS.AES.decrypt(cryptfile, password);
+	
+	ui8a = CryptoJS.enc.u8array.stringify(decryptedwords);
+	blob = new Blob([ui8a], {type: metadata.type});
+	postMessage({type: 'decrypt', data: blob});		
 }
 
 function abort() {
@@ -136,6 +121,7 @@ onmessage = function(e) {
 			break;
 
 		case "decrypt":
+			decrypt(message.cryptfile);
 			break;
 
 		case "abort":
