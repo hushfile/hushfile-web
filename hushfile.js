@@ -170,7 +170,7 @@ var HushFileDownloader = function(config) {
 							var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
 							requestFileSystem(PERSISTENT, totalsize, function(fs) {
 								var file = fs.root.getFile(message.filename, {}, function(fileEntry) {
-									_onprogress({event: 'load', url: fileEntry.toURL('text/plain')});
+									_onprogress({event: 'load', url: fileEntry.toURL(message.mimetype)});
 								});
 							});
 						}

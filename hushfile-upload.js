@@ -26,15 +26,36 @@ function hfHandleFileSelect(evt) {
     
     $('#chunkcount').html(chunkcount);
     $('#chunksdone').html(0);
-    $('#uploadbuttondiv').show();
+    $('#uploadbuttondiv').hide();
 
+    var uploader = new HushFileUploader({
+        onloadstart: function(e) {
+            console.log("started uploading");
+        }, 
+        onprogress: function(e) {
+            temp = Math.round((e.loaded / e.total) * 100);
+            $("#uploadprogressbar").css('width', temp + '%');
+            $("#uploadprogressbar").text(temp + '%');
+        },
+        onload: function(e) {
+            $('#uploaddone').addClass("icon-check");
+            $('#uploading').css('color', 'green');
+            $('#response').show();
+            //get current URL
+            url = window.location.protocol + '//' + window.location.host + '/';
+
+            document.getElementById('response').innerHTML = '<p><i class="icon-check"></i> <b><span style="color: green;">Success! Your URL is:</span></b><br> <a class="btn btn-success" href="/'+e.fileid+'#'+e.password+'">'+url+e.fileid+'#'+e.password+'</a>';
+        }
+    });
+    uploader.upload(file);
 };
 
 function hfDoUpload() {
+    console.log("do upload invoked");
     // hide upload button
     $('#uploadbuttondiv').hide();
     
-	//generate deletepassword
+/*	//generate deletepassword
 	deletepassword = hfRandomPassword(40);
 	
     // max. number of workers
@@ -86,7 +107,7 @@ function hfDoUpload() {
         'file': file,
         'deletepassword': deletepassword,
         'mimetype': mimetype,
-    });
+    });*/
 };
 
 function hfFinishUpload() {
