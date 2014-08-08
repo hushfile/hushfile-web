@@ -1,4 +1,4 @@
-importScripts('cryptfile.js', 'js/cryptojs-aes.js', 'js/cryptojs-uint8.js', 'requests.js');
+importScripts('/js/filewriter.js', '/js/cryptojs-aes.js', '/js/cryptojs-uint8.js', '/js/requests.js');
 
 var fileid;
 var password;

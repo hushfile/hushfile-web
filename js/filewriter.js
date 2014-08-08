@@ -1,6 +1,6 @@
 var persistentStorage = navigator.persistentStorage || navigator.webkitPersistentStorage;
  
-function CryptFile(filename, size, passphrase, success) {
+function FileWriter(filename, size, passphrase, success) {
 	var self = this;
 
 	self._filename = filename;
@@ -8,7 +8,7 @@ function CryptFile(filename, size, passphrase, success) {
 	self._passphrase = passphrase;
 
 	// Start worker.
-	self._worker = new Worker('cryptfileworker.js');
+	self._worker = new Worker('/workers/filewriter-worker.js');
 	self.postMessage();
 
 	self._worker.onmessage = function (e) {
@@ -48,27 +48,27 @@ function CryptFile(filename, size, passphrase, success) {
 	);
 }
 
-CryptFile.prototype.postMessage = function (message) {
+FileWriter.prototype.postMessage = function (message) {
 	this.log("Sending: " + JSON.stringify(message));
 	this._worker.postMessage(message);
 }
 
-CryptFile.prototype.log = function (message) {
+FileWriter.prototype.log = function (message) {
 	//console.log(this._filename + ": " + message);
 }
 
-CryptFile.prototype.append = function (data) {
+FileWriter.prototype.append = function (data) {
 	this.postMessage({ type: "append", data: data });
 }
 
-CryptFile.prototype.stop = function () {
+FileWriter.prototype.stop = function () {
 	this.postMessage({ type: "stop" });
 }
 
-CryptFile.prototype.remove = function () {
+FileWriter.prototype.remove = function () {
 	this.postMessage({ type: "remove" });
 }
 
-CryptFile.prototype.stop = function () {
+FileWriter.prototype.stop = function () {
 	this.postMessage({ type: "stop" });
 }
