@@ -55,51 +55,23 @@ function hfGetMetadata(fileid) {
 	ipxhr.send();
 }
 
-
-function hfDownloadChunk(fileid, password, totalsize, success, error, chunknumber) {
-	// disable the download button
-	// make download progress bar div visible
-	$('#downloadbtn').addClass("btn btn-large btn-primary btn-success disabled");
-	$('#downloading').show();
-
-	if(chunknumber == undefined) chunknumber = 0;
-	
-	var type = {type: $('#mimetype').html()};
-	var readSize = 1024000;
-	var idx = chunknumber*readSize;
-	
-	worker = new Worker('download-worker.js');
-	worker.postMessage({size:totalsize, start: idx, chunknumber: chunknumber, password:password, fileid:fileid, type: type});
-	
-	worker.onmessage = function(event) {
-		if(idx + readSize < totalsize) {
-			var temp = Math.round(idx/totalsize * 100) + '%';
-			$('#download_progress_bar_percent').css('width', temp).text(temp);
-			hfDownloadChunk(fileid, password, totalsize, completion, chunknumber);
-		} else {		
-			reader = new Worker('download-filereader.js');
-			reader.onmessage = function(event) {
-				message = event.data;
-				$('#download_progress_bar_percent').css('width', '100%').text('100%');
-				if(success) success(message.file);
-			}
-			
-			reader.postMessage({totalsize: totalsize});
-		}		
-	}
-}
-
-
 //function that downloads the file to the browser, and decrypts and shows download button
 function hfDownload(fileid, totalchunks, totalsize) {
 	// get password from window.location
 	var password = window.location.hash.substr(1);
-
-	 var persistentStorage = navigator.persistentStorage || navigator.webkitPersistentStorage;
-	 persistentStorage.queryUsageAndQuota(
-		function (used, remaining) {
-			var success = function(fileblob) {
-				//done downloading, make downloading div green and change icon
+	var downloader = new HushFileDownloader({
+		onloadstart: function(e) {
+			console.log("download started");
+			$('#downloadbtn').addClass("btn btn-large btn-primary btn-success disabled");
+			$('#downloading').show();
+		},
+		onprogress: function(e) {
+			temp = Math.round((e.loaded / e.total) * 100);
+			$('#download_progress_bar_percent').css('width',temp + '%');
+			$('#download_progress_bar_percent').text(temp + '%');
+		},
+		onload: function(e) {
+			//done downloading, make downloading div green and change icon
 				$('#downloading').css('color', 'green');
 				$('#downloadingdone').removeClass('icon-spinner icon-spin').addClass("icon-check"); //explicitly clear classes?
 
@@ -111,7 +83,7 @@ function hfDownload(fileid, totalchunks, totalsize) {
 				
 				// download button
 				a = document.createElement("a");
-				a.href = window.URL.createObjectURL(fileblob);
+				a.href = e.url;
 				a.download = $('#filename').html();
 				linkText = document.createTextNode(" Download");
 				i = document.createElement("i");
@@ -128,34 +100,18 @@ function hfDownload(fileid, totalchunks, totalsize) {
 				if((/image/i).test($('#mimetype').html())){
 					img = document.createElement("img");
 					img.className="img-rounded";
-					img.src = window.URL.createObjectURL(fileblob);
+					img.src = e.url;
 					a = document.createElement("a");
-					a.href = window.URL.createObjectURL(fileblob);
+					a.href = e.url;
 					a.download = document.getElementById('filename').innerHTML;
 					a.appendChild(img);
 					$('#filepreview').append(a);
 					$('#previewdiv').show();
 				};
-			}
-
-			if(totalsize < remaining) {
-					hfDownloadChunk(fileid, password, totalsize, success);
-			} else {
-				persistentStorage.requestQuota(totalsize, 
-					function(bytes) {
-						hfDownloadChunk(fileid, password, totalsize, success)
-					}, 
-					function() {
-						alert("An error was encountered downloading filedata.");
-					}
-				);
-			}
-		},
-		function(e) {
-			alert("An error was encountered downloading filedata.");
 		}
-	);
-};
+	});
+	downloader.download(fileid, password);
+}
 
 
 // function to redirect the browser after a new password has been entered
