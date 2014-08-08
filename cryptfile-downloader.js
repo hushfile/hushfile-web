@@ -1,4 +1,4 @@
-importScripts('cryptfile.js');
+importScripts('cryptfile.js', 'js/cryptojs-aes.js', 'js/cryptojs-uint8.js');
 
 var fileid;
 var password;
@@ -28,8 +28,7 @@ function getApiMetadata(success, error) {
 	xhr2.open('GET', '/api/metadata?fileid='+fileid, true);
 	xhr2.onload = function(e) {
 		if (this.status == 200) {
-			console.log(this.responseText);
-			var responseJson = eval('(' + this.responseText + ')');
+			var responseJson = eval('(' + CryptoJS.AES.decrypt(this.responseText, password).toString(CryptoJS.enc.Utf8) + ')');
 
 			if(success) success(responseJson);
 		} else {
@@ -60,11 +59,14 @@ function getApiFile(chunknumber, success, error) {
 	xmr.open('GET', '/api/file?fileid='+fileid+'&chunknumber='+chunknumber);
 	xmr.onload = function(e) {
 		if(this.status == 200) {
+			console.log(xmr.responseText);
+			console.log(password);
 			// decrypt the data
-			/*decryptedwords = CryptoJS.AES.decrypt(xmr.responseText, password);
+			decryptedwords = CryptoJS.AES.decrypt(xmr.responseText, password);
+			console.log(decryptedwords);
 			ui8a = CryptoJS.enc.u8array.stringify(decryptedwords);
-			foo = new Blob(ui8a, message.type);
-			var fs = requestFileSystemSync(PERSISTENT, message.size);*/
+			blob = new Blob([ui8a], {type: metadata.type});
+			
 			
 			/*var file = fs.root.getFile('hushfile.temp',{create: true, exclusive: false});
 			var writer = file.createWriter();
@@ -72,7 +74,7 @@ function getApiFile(chunknumber, success, error) {
 			writer.write(foo);
 			postMessage();*/
 
-			if(success) success(xmr.responseText);
+			if(success) success(blob);
 		} else {
 			if(error) error(e);
 		}
@@ -92,7 +94,7 @@ function initialize(fileid, password) {
 				message.type = "init";
 				message.ip = ip.uploadip;
 				message.chunks = existsdata.chunks;
-				message.totalsize = existsdata.chunks;
+				message.totalsize = existsdata.totalsize;
 				postMessage(metadata);
 			});
 		});

@@ -15,7 +15,7 @@ var HushFile = function(config) {
 	config = config || {};
 
 	password = config.password || hfRandomPassword(16);
-	chunksize = config.chunksize || 10;
+	chunksize = config.chunksize || 1024000;
 
 	//eventhandler for a file select
 	this.select = function(evt) {
@@ -115,10 +115,11 @@ var HushFile = function(config) {
 			var totalsize;
 			switch(message.type) {
 				case "init":
+
 					totalchunks = message.chunks;
 					totalsize = message.totalsize;
 
-					cryptfile = new CryptFile(message.filename, totalsize, password, function(){
+					cryptfile = new CryptFile(message.filename, totalsize*1024, password, function(){
 						chunknumber++;
 						if(chunknumber < totalchunks) {
 							worker.postMessage({type:"download", chunknumber: chunknumber});
@@ -127,7 +128,7 @@ var HushFile = function(config) {
 							requestFileSystem(PERSISTENT, totalsize, function(fs) {
 								var file = fs.root.getFile(message.filename, {}, function(fileEntry) {
 									console.log(fileEntry.toURL('text/plain'));
-									$(document).append("<a href='" + fileEntry.toURL('text/plain') + "'>wow</a>");
+									document.write("<a href='" + fileEntry.toURL('text/plain') + "'>wow</a>");
 								});
 							});
 						}

@@ -10,6 +10,7 @@ var metadataobject;
 
 var fileid;
 var uploadpassword;
+var filecontents;
 
 function initialize(name, size, mimetype, deletepassword, password) {
 	reader = new FileReaderSync();
@@ -32,9 +33,10 @@ function read(file, start, end) {
 }
 
 function encrypt() {
-	//Y U NO WORK?
+
 	ui8a = new Uint8Array(filecontents);
 	wordarray = CryptoJS.enc.u8array.parse(ui8a);
+	console.log(wordarray);
 	cryptoobject = CryptoJS.AES.encrypt(wordarray, password);
 
 	postMessage({type:"encrypt"});
