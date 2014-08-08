@@ -162,7 +162,7 @@ var HushFileDownloader = function(config) {
 					totalsize = message.totalsize;
 					filesize = message.filesize;
 
-					cryptfile = new CryptFile(message.filename, filesize, password, function(){
+					cryptfile = new CryptFile(message.filename, filesize*1024, password, function(){
 						chunknumber++;
 						if(chunknumber < totalchunks) {
 							worker.postMessage({type:"download", chunknumber: chunknumber});

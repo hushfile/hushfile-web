@@ -33,11 +33,13 @@ function hfHandleFileSelect(evt) {
             console.log("started uploading");
         }, 
         onprogress: function(e) {
+            console.log("progress: " + e.loaded + '/' + e.total);
             temp = Math.round((e.loaded / e.total) * 100);
             $("#uploadprogressbar").css('width', temp + '%');
             $("#uploadprogressbar").text(temp + '%');
         },
         onload: function(e) {
+            console.log("upload complete");
             $('#uploaddone').addClass("icon-check");
             $('#uploading').css('color', 'green');
             $('#response').show();
@@ -54,60 +56,6 @@ function hfDoUpload() {
     console.log("do upload invoked");
     // hide upload button
     $('#uploadbuttondiv').hide();
-    
-/*	//generate deletepassword
-	deletepassword = hfRandomPassword(40);
-	
-    // max. number of workers
-    maxworkers = 5;
-    
-    // initialize vars
-    fileid = false;
-    chunkindex = 0;    
-    chunkstate = [];
-    for (chunkindex=0; chunkindex < chunkcount; chunkindex++) {
-        chunkstate[chunkindex] = 'pending';
-    };
-    
-    // spawn worker to process the first chunk (and get the fileid)
-    worker = new Worker('hushfile-upload-worker.js');
-
-    // add listener for when the worker is done
-    worker.addEventListener('message', function(e) {
-        if(e.data.result=='ok') {
-            // get the data from the workers response
-            if(e.data.chunknumber) {
-                // mark this chunk as done
-                chunkstate[e.data.chunknumber] = 'done';
-                
-                // this was the first chunk so the fileid and uploadpassword is returned after upload
-                fileid = e.data.fileid;
-                uploadpassword = e.data.uploadpassword;
-                
-                // any remaining chunks ?
-                if(chunkcount > 1) {
-                    // TODO spawn workers to handle remaining chunks
-                } else {
-                    // only one chunk, finish the upload
-                    hfFinishUpload();
-                };
-            } else {
-                chunkstate[e.data.chunknumber] = 'failed';
-            };                
-        };
-        
-        // terminate the worker
-        worker.terminate(); 
-    }, false);
-
-    worker.postMessage({
-        'chunknumber': 0, 
-        'password': document.getElementById('password').value, 
-        'chunksize': chunksize, 
-        'file': file,
-        'deletepassword': deletepassword,
-        'mimetype': mimetype,
-    });*/
 };
 
 function hfFinishUpload() {

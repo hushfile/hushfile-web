@@ -66,48 +66,50 @@ function hfDownload(fileid, totalchunks, totalsize) {
 			$('#downloading').show();
 		},
 		onprogress: function(e) {
+			console.log("progress" + e.loaded + '/' + e.total);
 			temp = Math.round((e.loaded / e.total) * 100);
 			$('#download_progress_bar_percent').css('width',temp + '%');
 			$('#download_progress_bar_percent').text(temp + '%');
 		},
 		onload: function(e) {
+			console.log("download complete");
 			//done downloading, make downloading div green and change icon
-				$('#downloading').css('color', 'green');
-				$('#downloadingdone').removeClass('icon-spinner icon-spin').addClass("icon-check"); //explicitly clear classes?
+			$('#downloading').css('color', 'green');
+			$('#downloadingdone').removeClass('icon-spinner icon-spin').addClass("icon-check"); //explicitly clear classes?
 
-				//make the decrypting div visible
-				$('#decrypting').show().css('color', 'green');
+			//make the decrypting div visible
+			$('#decrypting').show().css('color', 'green');
 
-				//done decrypting, change icon and make div green
-				$('#decryptingdone').removeClass('icon-spinner icon-spin').addClass("icon-check");
-				
-				// download button
+			//done decrypting, change icon and make div green
+			$('#decryptingdone').removeClass('icon-spinner icon-spin').addClass("icon-check");
+			
+			// download button
+			a = document.createElement("a");
+			a.href = e.url;
+			a.download = $('#filename').html();
+			linkText = document.createTextNode(" Download");
+			i = document.createElement("i");
+			i.className="icon-save icon-large";
+			a.appendChild(i);
+			a.appendChild(linkText);
+			a.className = "btn btn-large btn-primary btn-success";
+			$('#downloaddiv').append(a);
+			
+			//make div visible
+			$('#downloaddiv').show();
+			
+			// if this is an image, make a preview
+			if((/image/i).test($('#mimetype').html())){
+				img = document.createElement("img");
+				img.className="img-rounded";
+				img.src = e.url;
 				a = document.createElement("a");
 				a.href = e.url;
-				a.download = $('#filename').html();
-				linkText = document.createTextNode(" Download");
-				i = document.createElement("i");
-				i.className="icon-save icon-large";
-				a.appendChild(i);
-				a.appendChild(linkText);
-				a.className = "btn btn-large btn-primary btn-success";
-				$('#downloaddiv').append(a);
-				
-				//make div visible
-				$('#downloaddiv').show();
-				
-				// if this is an image, make a preview
-				if((/image/i).test($('#mimetype').html())){
-					img = document.createElement("img");
-					img.className="img-rounded";
-					img.src = e.url;
-					a = document.createElement("a");
-					a.href = e.url;
-					a.download = document.getElementById('filename').innerHTML;
-					a.appendChild(img);
-					$('#filepreview').append(a);
-					$('#previewdiv').show();
-				};
+				a.download = document.getElementById('filename').innerHTML;
+				a.appendChild(img);
+				$('#filepreview').append(a);
+				$('#previewdiv').show();
+			};
 		}
 	});
 	downloader.download(fileid, password);
