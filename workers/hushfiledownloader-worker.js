@@ -16,7 +16,7 @@ function initialize(fileid, password) {
 				message.ip = ip.uploadip;
 				message.chunks = existsdata.chunks;
 				message.totalsize = existsdata.totalsize;
-				postMessage(metadata);
+				postMessage(message);
 			});
 		});
 	}, function(e) {

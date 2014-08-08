@@ -39,18 +39,16 @@ var HushFileDownloader = function(config) {
 
 	this.download = function(fileid, password, success, error) {
 		var cryptfile;
+		var filesize;
+		var totaldownload = 0;
+
 		var worker = new Worker('/workers/hushfiledownloader-worker.js');
 		worker.onmessage = function(e) {
 			var message = e.data;
 			var chunknumber = 0;
-			var totalchunks;
-			var totalsize;
-			var filesize;
-			var size;
-			var totaldownload = 0;
 			switch(message.type) {
 				case "init":
-					totalchunks = message.chunks;
+					var totalchunks = message.chunks;
 					totalsize = message.totalsize;
 					filesize = message.filesize;
 
@@ -67,8 +65,8 @@ var HushFileDownloader = function(config) {
 							});
 						}
 					});
+
 					var file = {name: message.filename, size: filesize, type: message.mimetype};
-					
 					_onprogress({event: 'loadstart', file: file});
 					worker.postMessage({type:"download", chunknumber:0});
 					break;
@@ -80,7 +78,7 @@ var HushFileDownloader = function(config) {
 				case "decrypt":
 					totaldownload += message.data.size;
 
-					_onprogress({event: 'progress', loaded: totaldownload, total: filesize}); //For some odd reason filesize is undefined :(
+					_onprogress({event: 'progress', loaded: totaldownload, total: filesize});
 					cryptfile.append(message.data);
 					break;
 
