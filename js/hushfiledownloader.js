@@ -77,11 +77,14 @@ var HushFileDownloader = function(config) {
 
 				case "decrypt":
 					totaldownload += message.data.size;
-
 					_onprogress({event: 'progress', loaded: totaldownload, total: filesize});
 					cryptfile.append(message.data);
 					break;
 
+                case "debugmessage":
+                    console.log('debug: ' + message.message)
+                    break;
+                    
 				default:
 					_onprogress({event: 'error', message: message});
 					break;
