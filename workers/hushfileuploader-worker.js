@@ -22,7 +22,8 @@ function initialize(name, size, mimetype, deletepassword, password) {
 	self.deletepassword = deletepassword;
 	metadatajson = '{"filename": "' + name + '", "mimetype": "' + mimetype + '", "filesize": "' + size + '", "deletepassword": "' + deletepassword + '"}';
 	metadataobject = CryptoJS.AES.encrypt(metadatajson, password);
-
+    console.log("metadata key: " + metadataobject.key);
+    console.log("metadata iv: " + metadataobject.iv);
 	postMessage({type:"init"});
 }
 
@@ -36,6 +37,8 @@ function encrypt() {
 	ui8a = new Uint8Array(filecontents);
 	wordarray = CryptoJS.enc.u8array.parse(ui8a);
 	cryptoobject = CryptoJS.AES.encrypt(wordarray, password);
+    console.log("crypto key: " + cryptoobject.key);
+    console.log("crypto iv: " + cryptoobject.iv);
 
 	postMessage({type:"encrypt"});
 }
