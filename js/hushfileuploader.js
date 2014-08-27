@@ -93,7 +93,11 @@ var HushFileUploader = function(config) {
 					}
 					break;
 
-				default:
+                case "debugmessage":
+                    console.log('debug: ' + message.message)
+                    break;
+
+                default:
 					_onprogress({event: 'error', message: response.message});
 					break;
 			}
