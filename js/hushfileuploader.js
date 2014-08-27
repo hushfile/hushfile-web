@@ -52,7 +52,7 @@ var HushFileUploader = function(config) {
 		var size = file.size;
 		var worker = new Worker('/workers/hushfileuploader-worker.js');
 		var tmp = 0;
-		var password = self.generatePassword(16);
+		var password = self.generatePassword(40);
 		var deletepassword = self.generatePassword(40);
 
 		var start;
