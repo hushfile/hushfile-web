@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>hushfile</title>
+    </head>
+    
+    <body style="padding: 80px 0 80px 0;">
+        <input type="file" id="uploadfile" />
+        <script src="js/jquery-1.9.1.min.js"></script>
+        <script src="js/db.js"></script>
+        <!--<script src="js/bootstrap.min.js"></script>
+        <script src="js/bootbox.min.js"></script>
+        <script src="js/bootstrapSwitch.js"></script>
+        <script src="js/cryptojs-aes.js"></script>
+        <script src="js/cryptojs-uint8.js"></script>
+        <script src="js/filewriter.js"></script>
+        <script src="js/hushfileuploader.js"></script>
+        <script src="js/hushfiledownloader.js"></script>
+        <script src="hushfile-common.js"></script>
+        <script src="hushfile-upload.js"></script>
+        <script src="hushfile-download.js"></script> -->
+        <script>
+            $(document).ready(function() {
+                // activate dismiss/close function of any bootstrap alert boxes
+               $('#uploadfile').change(function(e) {
+                var file = this.files[0];
+                console.log(file);
+                    var db = new database();
+                            db.init(function() {
+                                db.saveChunk("foo.txt", 0, file.slice(0, Math.floor(file.size/2)));
+                                db.saveChunk("foo.txt", 1, file.slice(Math.floor(file.size/2), file.size));
+                                db.readChunk("foo.txt", 1, 
+                                    function(obj) { 
+                                        console.log("I got the object"); 
+                                        fileReader = new FileReader();
+                                        fileReader.onload = function(e) {
+                                            console.log(fileReader.result);
+                                        }
+                                        fileReader.readAsText(obj.contents);
+                                    }, 
+                                    function(){ 
+                                        console.log("uh oh, something happened"); 
+                                    }
+                                );
+                                db.getFile("foo.txt", 2, function(file) { fileReader = new FileReader();
+                                        fileReader.onload = function(e) {
+                                            console.log(fileReader.result);
+                                            $('body').append('<a href="' + fileReader.result + '">foo</a>');
+                                        }
+                                        fileReader.readAsDataURL(file);
+                                });
+                    });
+               });
+            });
+ 
+        
+        
+        </script>
+    </body>
+</html>
