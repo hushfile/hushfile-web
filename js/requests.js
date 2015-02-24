@@ -5,7 +5,7 @@ function getApiExists(fileid, success, error) {
 	xhr.open('GET', '/api/exists?fileid='+fileid, true);
 	xhr.onload = function(e) {
 		if(xhr.status == 200) {
-			var responseobject = eval('(' + eval('(' + xhr.responseText + ')') + ')');
+			var responseobject = JSON.parse(xhr.responseText);
 			if (responseobject.exists) {
 				// fileid exists
 				if(success) success(responseobject);
@@ -22,7 +22,7 @@ function getApiMetadata(fileid, password, success, error) {
 	xhr2.open('GET', '/api/metadata?fileid='+fileid, true);
 	xhr2.onload = function(e) {
 		if (this.status == 200) {
-			var responseJson = eval('(' + CryptoJS.AES.decrypt(this.responseText, password).toString(CryptoJS.enc.Utf8) + ')');
+			var responseJson = JSON.parse(CryptoJS.AES.decrypt(this.responseText, password).toString(CryptoJS.enc.Utf8));
 			if(success) success(responseJson);
 		} else {
 			//nop for now
@@ -36,7 +36,7 @@ function getApiIp(fileid, success, error) {
 	ipxhr.open('GET', '/api/ip?fileid='+fileid, true);
 	ipxhr.onload = function(e) {
 		if (this.status == 200) {
-			var responseJson = eval('(' + eval('(' + this.responseText + ')') + ')');			
+			var responseJson = JSON.parse(this.responseText);
 			if(success) success(responseJson);
 		} else {
 			error(e);

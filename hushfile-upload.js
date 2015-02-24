@@ -70,7 +70,7 @@ function hfFinishUpload() {
             try{
                 responseobject = JSON.parse(responseText);
                 // if everything went well, show the download link
-                if (responseobject.status=='ok') {
+                if (responseobject.status=='OK') {
                     hfUploadCompletion();
                 } else {
                     $('#response').html('Something went wrong. Sorry about that. <a href="/">Try again.</a>');

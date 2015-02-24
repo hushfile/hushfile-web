@@ -49,10 +49,9 @@ function upload(chunknumber, finishupload) {
 	xhr.onload = function(e) {
 		if (this.status == 200) {
 			//wtf? fix this
-			var responseobject = eval("("+xhr.responseText+")");
-			responseobject = eval('('+responseobject+')');
+			var responseobject = JSON.parse(xhr.responseText);
 
-			if(responseobject.status == 'ok') {
+			if(responseobject.status == 'OK') {
 				fileid = responseobject.fileid;
 				uploadpassword = responseobject.uploadpassword;
 				postMessage({type: "upload", response: responseobject});
@@ -73,6 +72,7 @@ function upload(chunknumber, finishupload) {
 	}
 	if(fileid) formdata += ',"fileid":"' + fileid + '"';
 	if(uploadpassword) formdata += ',"uploadpassword":"' + uploadpassword + '"';
+	if (chunknumber === 0) formdata += ',"deletepassword":"' + deletepassword + '"';
 	formdata += "}";
 
 	xhr.setRequestHeader('Content-Type', 'application/json');

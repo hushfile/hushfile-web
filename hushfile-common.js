@@ -12,8 +12,7 @@ function hfhandlerequest() {
 			url: '/api/exists?fileid='+fileid,
 			type: 'GET',
 			dataType: 'json',
-			success: function(responseText) {
-				var responseobject = JSON.parse(responseText);
+			success: function(responseobject) {
 				if (responseobject.exists) {
 					// fileid exists
 					if(window.location.hash.substr(1)=="") {

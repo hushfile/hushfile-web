@@ -140,11 +140,11 @@ function hfDeleteFile(fileid) {
 			var responseobject = JSON.parse(xhr.responseText);
 			if(responseobject.deleted) {
 				//file deleted OK
-				$('#deletingdone').addClass("icon-check");
+				$('#deletingdone').removeClass('icon-spinner icon-spin').addClass("icon-check");
 				$('#deleteresponse').html("<div class='alert alert-success'>File deleted successfully</div>\n");
 			} else {
 				//unable to delete file
-				$('#deletingdone').addClass("icon-warning-sign");
+				$('#deletingdone').removeClass('icon-spinner icon-spin').addClass("icon-warning-sign");
 				$('#deleteresponse').html("<div class='alert alert-error'>Unable to delete file</div>\n");
 			};
 		} else if (this.status == 401) {
